@@ -9,9 +9,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Main {
-    private static int currentPlayerID = -1, currentPartyID = -1, gamesPlayed = 0;
-    private static String pathToLog;
+    private static int currentPlayerID = -1, currentPartyID = -1, gamesPlayed = 0, numberOfSessions = 0, numberOfMatches = 0, numberOfRounds = 0;
+    private static String pathToPlayerLog;
     private static ArrayList<String> MapPlayedSoFarInOrder = new ArrayList<String>();
+
     private static long lastKnownLength = 0, lineCount = 0;
 
 
@@ -27,42 +28,28 @@ public class Main {
 
         File DefaultDirectory = CheckForDefaultLogsStorageFolder();
 
-        boolean AddNewSession = false;
-        int numberOfSessions = 0;
+        boolean AddNewSession = true;
 
         //Keep the program running so we can keep rechecking till fallguys opens again.
         while (true) {
 
+            File SessionFolderDirectory = null;
+            File MatchFolderDirectory = null;
+
             //Only continue checking this file if we are still playing fall guys.
             while (IsProcessStillRunning()) {
-                File writeSessions;
+
                 //Add a new session
                 if (AddNewSession) {
                     AddNewSession = false;
-
-                    File[] folders = DefaultDirectory.listFiles(File::isDirectory);
-                    System.out.println(folders.length);
-                    if (folders != null && folders.length > 0) {
-                        for (File folder : folders) {
-                            System.out.println("Folder:" + folder.getName());
-                            numberOfSessions = Integer.parseInt(folder.getName().split("_")[1]);
-                        }
-                        writeSessions = new File(DefaultDirectory.getPath() + "\\GameSession_" + ++numberOfSessions);
-                        writeSessions.mkdir();
-
-                    } else {
-                        System.out.println("There is no folders in this directory");
-                        writeSessions = new File(DefaultDirectory.getPath() + "\\GameSession_1");
-                        writeSessions.mkdir();
-                    }
-
+                    SessionFolderDirectory = CreateNewSessionFolder(DefaultDirectory, SessionFolderDirectory);
                 }
 
                 FileReader fr = PrepareReadFile();
                 //Open buffered reader to read the information inside the file.
                 BufferedReader br = new BufferedReader(fr);
 
-                long fileLength = new File(pathToLog).length();
+                long fileLength = new File(pathToPlayerLog).length();
 
                 //Check to see if the file has changed in length, indicating some updates to it.
                 if (fileLength > lastKnownLength) {
@@ -81,6 +68,15 @@ public class Main {
                             printRoundInfo = false;
                             roundInfoCounter = 19;
                         }
+
+                        //We want to be able to check if a new match has started and if so we make the new match folder and include all the info there
+                        if (currentLine.contains("[StateConnectToGame] We're connected to the server!")) // this technically only happens if you connect to a new match
+                        {
+                            MatchFolderDirectory = CreateNewMatchFolder(SessionFolderDirectory);
+                        }
+
+                        //TODO: once we recievbe that the match has ended we can then grab this info but until then it is useless.
+                        //we also have to store the information for when this shows up as it will more then likely be reading past this point already.
 
                         //If we stumble upon this we have a game completed.
                         if (currentLine.contains("== [CompletedEpisodeDto] ==")) {
@@ -104,7 +100,7 @@ public class Main {
                     lastKnownLength = fileLength;
                 }
                 //If the file has not updated or changed in any way we print out this info.
-                PrintOutEndInfo();
+                //     PrintOutEndInfo();
 
                 //Let this loop sleep for 2 seconds before rechecking the file for new changes.
                 try {
@@ -112,11 +108,19 @@ public class Main {
                 } catch (IllegalArgumentException | InterruptedException e) {
                     System.out.println(e.getMessage());
                 }
-                //        //Close the file reader and buffered reader.
+
+                //Close the file reader and buffered reader.
                 br.close();
                 fr.close();
             }
+
+            //At this point, the session has stopped, so reset the number of rounds and matches to 0, for the new session when it starts.
+            numberOfMatches = 0;
+            numberOfRounds = 0;
+
+            lastKnownLength = 0;
             AddNewSession = true;
+
             //Let this loop sleep for 2 seconds before rechecking if the process is open.
             try {
                 Thread.sleep(2000);
@@ -131,13 +135,13 @@ public class Main {
 
         //Attempt to get the %AppData%
         try {
-            pathToLog = System.getenv("AppData") + "\\..\\LocalLow\\Mediatonic\\FallGuys_client\\Player.log";
+            pathToPlayerLog = System.getenv("AppData") + "\\..\\LocalLow\\Mediatonic\\FallGuys_client\\Player.log";
         } catch (SecurityException | NullPointerException e) {
             System.out.println("The environment path cannot be found");
         }
 
         //Find the file and begin the file reader.
-        File file = new File(pathToLog);
+        File file = new File(pathToPlayerLog);
         FileReader fr = null;
         try {
             fr = new FileReader(file);
@@ -188,7 +192,7 @@ public class Main {
     }
 
     public static void PrintOutEndInfo() {
-        System.out.println("The file size in mb: " + String.format("%.2f", new File(pathToLog).length() / (1.049 * Math.pow(10, 6))));
+        System.out.println("The file size in mb: " + String.format("%.2f", new File(pathToPlayerLog).length() / (1.049 * Math.pow(10, 6))));
         System.out.println("The total amount of lines we read: " + lineCount);
         System.out.println("The total amount of games played this session is: " + gamesPlayed);
         System.out.println("The most recent playerid is : " + currentPlayerID);
@@ -199,42 +203,60 @@ public class Main {
         System.out.println(currentLine);
     }
 
-    //This returns the new player id only if it has changed.
+    //This returns the new player id and is only called if player id has changed in the logs.
     public static long UpdatePlayerID(String currentLine) {
 
         String[] splitParts = currentLine.split("player ID =");
-        System.out.println(splitParts.length);
         currentPlayerID = Integer.parseInt(splitParts[1].trim());
-        return Integer.parseInt(splitParts[1].trim());
+        return currentPlayerID;
     }
 
     public static boolean CheckIfFileOrPathExists(Path path) {
         if (Files.isDirectory(path)) {
-            System.out.println("This is a directory.");
             return true;
         } else if (Files.isRegularFile(path)) {
-            System.out.println("This is a regular file.");
             return true;
-        } else {
-            System.out.println("This path does not exist");
         }
 
+        System.out.println("This path does not exist");
         return false;
     }
 
+    public static File CreateNewMatchFolder(File writeSessionsFolder) {
 
-    //Whenever we start a new match this is called.
-    public static void CreateNewMatchFolder() {
+        File[] matchFolders = writeSessionsFolder.listFiles(File::isDirectory);
+        File newMatchFolder = null;
+        if (matchFolders != null && matchFolders.length > 0) {
+            for (File folder : matchFolders) {
+                numberOfMatches = Integer.parseInt(folder.getName().split("_")[1]);
+            }
+            newMatchFolder = new File(writeSessionsFolder.getPath() + "\\Match_" + ++numberOfMatches);
+            newMatchFolder.mkdir();
 
+        } else {
+            newMatchFolder = new File(writeSessionsFolder.getPath() + "\\Match_1");
+            newMatchFolder.mkdir();
+        }
+
+        return newMatchFolder;
     }
 
-    //Whenever a new round is made this is called
-    public static void CreateNewRoundFolder() {
+    public static File CreateNewSessionFolder(File defaultDirectory, File writeSessions) {
 
-    }
+        File[] folders = defaultDirectory.listFiles(File::isDirectory);
+        if (folders != null && folders.length > 0) {
+            for (File folder : folders) {
+                numberOfSessions = Integer.parseInt(folder.getName().split("_")[1]);
+            }
+            writeSessions = new File(defaultDirectory.getPath() + "\\GameSession_" + ++numberOfSessions);
+            writeSessions.mkdir();
 
-    public static void CreateNewSessionFolder() {
+        } else {
+            writeSessions = new File(defaultDirectory.getPath() + "\\GameSession_1");
+            writeSessions.mkdir();
+        }
 
+        return writeSessions;
     }
 
     public static File CheckForDefaultLogsStorageFolder() {

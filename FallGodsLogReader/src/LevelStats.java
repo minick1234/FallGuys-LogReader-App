@@ -1,3 +1,5 @@
+import Enums.LevelType;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,10 +95,10 @@ class LevelStats {
         ALLMAPS.put("wle_s10_orig_round_043", new LevelStats("wle_s10_orig_round_043", "Trouble Tower", LevelType.Race, true, false, 10, 0, 0));
         ALLMAPS.put("wle_s10_orig_round_044", new LevelStats("wle_s10_orig_round_044", "Serpent Slalom", LevelType.Race, true, false, 10, 0, 0));
 
-        // ALLMAPS.put("wle_s10_orig_round_045", new LevelStats("wle_s10_orig_round_045", "Floorless", LevelType.Race, true, false, 10, 0, 0));
-        // ALLMAPS.put("wle_s10_orig_round_046", new LevelStats("wle_s10_orig_round_046", "In The Cloud", LevelType.Race, true, false, 10, 0, 0));
-        // ALLMAPS.put("wle_s10_orig_round_047", new LevelStats("wle_s10_orig_round_047", "Downstream Duel", LevelType.Race, true, false, 10, 0, 0));
-        // ALLMAPS.put("wle_s10_orig_round_048", new LevelStats("wle_s10_orig_round_048", "Lost Palace", LevelType.Race, true, false, 10, 0, 0));
+        // ALLMAPS.put("wle_s10_orig_round_045", new LevelStats("wle_s10_orig_round_045", "Floorless", Enums.LevelType.Race, true, false, 10, 0, 0));
+        // ALLMAPS.put("wle_s10_orig_round_046", new LevelStats("wle_s10_orig_round_046", "In The Cloud", Enums.LevelType.Race, true, false, 10, 0, 0));
+        // ALLMAPS.put("wle_s10_orig_round_047", new LevelStats("wle_s10_orig_round_047", "Downstream Duel", Enums.LevelType.Race, true, false, 10, 0, 0));
+        // ALLMAPS.put("wle_s10_orig_round_048", new LevelStats("wle_s10_orig_round_048", "Lost Palace", Enums.LevelType.Race, true, false, 10, 0, 0));
 
         ALLMAPS.put("wle_s10_orig_round_045_long", new LevelStats("wle_s10_orig_round_045_long", "Floorless", LevelType.Race, true, false, 10, 0, 0));
         ALLMAPS.put("wle_s10_long_round_003", new LevelStats("wle_s10_long_round_003", "Fall Speedway", LevelType.Race, true, false, 10, 0, 0));
@@ -531,8 +533,4 @@ class LevelStats {
         AllScenesToRound.put("FallGuy_SlideChute", "round_slide_chute");
         AllScenesToRound.put("FallGuy_UseShareCode", "user_creative_race_round");
     }
-
-
-
-
 }
