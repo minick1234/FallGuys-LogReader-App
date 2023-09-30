@@ -33,8 +33,6 @@ relation to where they were iwll tell us our placement
 21:12:39.393: [StateGameLoading] OnPlayerSpawned - NetID=202 ID=14 was spawned
 
 
-
-
 21:12:45.130: [CameraDirector] Set Local Party ID: 
 
 
@@ -42,3 +40,7 @@ relation to where they were iwll tell us our placement
 
 [EOSPartyPlatformService]: Invite Received - Lobby Invite:
 [EOSPartyPlatformService]
+
+
+//tHIS determines if we currently quit the match and disconnect.
+[ClientGlobalGameState] Client has been disconnected

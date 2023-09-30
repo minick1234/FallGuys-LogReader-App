@@ -12,9 +12,7 @@ public class Main {
     private static int currentPlayerID = -1, currentPartyID = -1, gamesPlayed = 0, numberOfSessions = 0, numberOfMatches = 0, numberOfRounds = 0;
     private static String pathToPlayerLog;
     private static ArrayList<String> MapPlayedSoFarInOrder = new ArrayList<String>();
-
     private static long lastKnownLength = 0, lineCount = 0;
-
 
     public static void main(String[] args) throws IOException {
 
@@ -22,7 +20,7 @@ public class Main {
         String currentLine;
 
         //when round is found - read the next 19 lines and associate that with round information.
-        int roundInfoCounter = 19;
+        int roundInfoCounter = 10;
 
         boolean printRoundInfo = false;
 
@@ -35,6 +33,7 @@ public class Main {
 
             File SessionFolderDirectory = null;
             File MatchFolderDirectory = null;
+            boolean matchStarted = false;
 
             //Only continue checking this file if we are still playing fall guys.
             while (IsProcessStillRunning()) {
@@ -55,6 +54,8 @@ public class Main {
                 if (fileLength > lastKnownLength) {
                     fr.skip(lastKnownLength);
 
+                    File roundFile;
+
                     //Go over each line in the file and print out everything.
                     while ((currentLine = br.readLine()) != null) {
                         //Keep count of each line that is read.
@@ -66,26 +67,33 @@ public class Main {
                             roundInfoCounter--;
                         } else if (printRoundInfo) {
                             printRoundInfo = false;
-                            roundInfoCounter = 19;
+                            roundInfoCounter = 10;
                         }
 
                         //We want to be able to check if a new match has started and if so we make the new match folder and include all the info there
                         if (currentLine.contains("[StateConnectToGame] We're connected to the server!")) // this technically only happens if you connect to a new match
                         {
                             MatchFolderDirectory = CreateNewMatchFolder(SessionFolderDirectory);
+                            matchStarted = true;
                         }
 
                         //TODO: once we recievbe that the match has ended we can then grab this info but until then it is useless.
                         //we also have to store the information for when this shows up as it will more then likely be reading past this point already.
 
-                        //If we stumble upon this we have a game completed.
-                        if (currentLine.contains("== [CompletedEpisodeDto] ==")) {
-                            gamesPlayed++;
+
+                        if (matchStarted) {
+                            if (currentLine.contains("[StateGameLoading] Finished loading game level, assumed to be")) ;
+                            {
+                                roundFile = CreateNewRoundFile(MatchFolderDirectory);
+                                System.out.println(roundFile.toPath() + " also " + roundFile.getName() + " also " + roundFile.length());
+                            }
+
+
                         }
 
-                        //If we stumble upon this it means that the player id has changed or updated.
-                        if (currentLine.contains("[CreateLocalPlayerInstances] Added new player as Participant, player ID = ")) {
-                            UpdatePlayerID(currentLine);
+                        //If we stumble upon this we have a game completed and this gives us the whole matches rounds information after.
+                        if (currentLine.contains("== [CompletedEpisodeDto] ==")) {
+                            gamesPlayed++;
                         }
 
                         //This is techincally checking for when the game finished what the rounds we played were as a whole.
@@ -94,6 +102,15 @@ public class Main {
                             --roundInfoCounter;
                             printRoundInfo = true;
                             System.out.println(currentLine);
+                        }
+
+                        if (currentLine.contains("[ClientGlobalGameState] Client has been disconnected")) {
+                            matchStarted = false;
+                        }
+
+                        //If we stumble upon this it means that the player id has changed or updated.
+                        if (currentLine.contains("[CreateLocalPlayerInstances] Added new player as Participant, player ID = ")) {
+                            UpdatePlayerID(currentLine);
                         }
                     }
                     //After reading through the whole file assign its length as the lastKnownLength so when we recheck we can compare its new size to this old one.
@@ -221,6 +238,25 @@ public class Main {
         System.out.println("This path does not exist");
         return false;
     }
+
+    public static File CreateNewRoundFile(File matchFolderDirectory) {
+        File[] matchFolders = matchFolderDirectory.listFiles(File::isDirectory);
+        File newRoundTextFile = null;
+        if (matchFolders != null && matchFolders.length > 0) {
+            for (File folder : matchFolders) {
+                numberOfRounds = Integer.parseInt(folder.getName().split("_")[1]);
+            }
+            newRoundTextFile = new File(matchFolderDirectory.getPath() + "\\Round_" + ++numberOfRounds + ".txt");
+            newRoundTextFile.mkdir();
+
+        } else {
+            newRoundTextFile = new File(matchFolderDirectory.getPath() + "\\Round_1.txt");
+            newRoundTextFile.mkdir();
+        }
+
+        return newRoundTextFile;
+    }
+
 
     public static File CreateNewMatchFolder(File writeSessionsFolder) {
 
