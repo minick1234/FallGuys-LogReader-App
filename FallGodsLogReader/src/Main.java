@@ -28,6 +28,16 @@ public class Main {
 
         boolean AddNewSession = true;
 
+        //TODO: NEED TO FIX AN ISSUE THAT WHEN WE START THE APPLICATION MID SESSION OF A GAME IT CREATES DUPLICATE FILES.
+        //WHEN PROCESS STARTS AND WE START READING THE FILE SKIP AND GO TO THE END RIGHT AWAY FOR THE FIRST TIME TO MAKE SURE
+        //ANY PREVIOUS STUFF IS NOT READ AND WE START RIGHT FROM THE BOTTOM
+
+        //Also fix that when you are not qualified and continue spectating it keeps creating round info for you
+
+        //find a way to also aggregate all the files for rounds into one at the end of the match
+
+        //find a way to go over every single round after a match and add the missing info i cannot get at real time.
+
         //Keep the program running so we can keep rechecking till fallguys opens again.
         while (true) {
 
@@ -50,18 +60,13 @@ public class Main {
 
                 long fileLength = new File(pathToPlayerLog).length();
 
-                //Check to see if the file has changed in length, indicating some updates to it.
                 if (fileLength > lastKnownLength) {
                     fr.skip(lastKnownLength);
-
                     File roundFile;
 
-                    //Go over each line in the file and print out everything.
                     while ((currentLine = br.readLine()) != null) {
-                        //Keep count of each line that is read.
                         ++lineCount;
 
-                        //If we have found round info to read, this ensures we keep reading the next 19 lines to get all the information
                         if (printRoundInfo && roundInfoCounter > 0) {
                             ReadRoundInfo(currentLine);
                             roundInfoCounter--;
@@ -70,34 +75,24 @@ public class Main {
                             roundInfoCounter = 10;
                         }
 
-                        //We want to be able to check if a new match has started and if so we make the new match folder and include all the info there
-                        if (currentLine.contains("[StateConnectToGame] We're connected to the server!")) // this technically only happens if you connect to a new match
-                        {
+                        if (currentLine.contains("[StateConnectToGame] We're connected to the server!")) {
                             MatchFolderDirectory = CreateNewMatchFolder(SessionFolderDirectory);
                             matchStarted = true;
-                        }
-
-                        //TODO: once we recievbe that the match has ended we can then grab this info but until then it is useless.
-                        //we also have to store the information for when this shows up as it will more then likely be reading past this point already.
-
-
-                        if (matchStarted) {
-                            if (currentLine.contains("[StateGameLoading] Finished loading game level, assumed to be")) ;
-                            {
+                        } else if (matchStarted) {
+                            if (currentLine.contains("[StateGameLoading] Finished loading game level, assumed to be")) {
                                 roundFile = CreateNewRoundFile(MatchFolderDirectory);
-                                System.out.println(roundFile.toPath() + " also " + roundFile.getName() + " also " + roundFile.length());
+                                FileWriter writer = new FileWriter(roundFile);
+                                try {
+                                    writer.append("this is for an example only.");
+                                } catch (IOException e) {
+                                    System.out.println("An error occured writing to the file");
+                                }
+                                writer.close();
                             }
-
-
                         }
-
-                        //If we stumble upon this we have a game completed and this gives us the whole matches rounds information after.
                         if (currentLine.contains("== [CompletedEpisodeDto] ==")) {
                             gamesPlayed++;
                         }
-
-                        //This is techincally checking for when the game finished what the rounds we played were as a whole.
-                        //If we stumble upon this it means we have round info to read.
                         if (currentLine.contains("[Round")) {
                             --roundInfoCounter;
                             printRoundInfo = true;
@@ -108,12 +103,10 @@ public class Main {
                             matchStarted = false;
                         }
 
-                        //If we stumble upon this it means that the player id has changed or updated.
                         if (currentLine.contains("[CreateLocalPlayerInstances] Added new player as Participant, player ID = ")) {
                             UpdatePlayerID(currentLine);
                         }
                     }
-                    //After reading through the whole file assign its length as the lastKnownLength so when we recheck we can compare its new size to this old one.
                     lastKnownLength = fileLength;
                 }
                 //If the file has not updated or changed in any way we print out this info.
@@ -174,14 +167,11 @@ public class Main {
     //Checks for if the process is running, this determines if we should continue checking the file for updates.
     public static boolean IsProcessStillRunning() {
 
-        //The fallguys process name as seen in the task manager.
         String processName = "FallGuys_client_game.exe";
 
-        //Grabs the process task list, which is visible from task manager for example to see all the running tasks.
         ProcessBuilder fallGuysProcessBuilder = new ProcessBuilder("tasklist");
 
         Process fallGuysProcess = null;
-        //This starts that builder and then grabs the current fallGuysProcess so we can check to see after if that process is running.
         try {
             fallGuysProcess = fallGuysProcessBuilder.start();
         } catch (IOException e) {
@@ -240,18 +230,30 @@ public class Main {
     }
 
     public static File CreateNewRoundFile(File matchFolderDirectory) {
-        File[] matchFolders = matchFolderDirectory.listFiles(File::isDirectory);
+        File[] roundFiles = matchFolderDirectory.listFiles(File::isFile);
         File newRoundTextFile = null;
-        if (matchFolders != null && matchFolders.length > 0) {
-            for (File folder : matchFolders) {
-                numberOfRounds = Integer.parseInt(folder.getName().split("_")[1]);
+        if (roundFiles != null && roundFiles.length > 0) {
+            for (File roundFile : roundFiles) {
+                String roundFileWithExtension = roundFile.getName().trim().split("_")[1];
+                numberOfRounds = Integer.parseInt(roundFileWithExtension.trim().split("\\.")[0]);
+
             }
             newRoundTextFile = new File(matchFolderDirectory.getPath() + "\\Round_" + ++numberOfRounds + ".txt");
-            newRoundTextFile.mkdir();
+            try {
+                newRoundTextFile.createNewFile();
+
+            } catch (IOException e) {
+                System.out.println("There was a error creating the file.");
+            }
 
         } else {
             newRoundTextFile = new File(matchFolderDirectory.getPath() + "\\Round_1.txt");
-            newRoundTextFile.mkdir();
+            try {
+                newRoundTextFile.createNewFile();
+
+            } catch (IOException e) {
+                System.out.println("There was a error creating the file.");
+            }
         }
 
         return newRoundTextFile;
