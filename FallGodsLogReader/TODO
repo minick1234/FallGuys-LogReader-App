@@ -1,0 +1,7 @@
+TODO / CHANGES TO MAKE:
+
+1.)Find a way to also aggregate all the files for rounds into one at the end of the match
+2.)Find a way to go over every single round after a match and add the missing info i cannot get at real time.
+3.)Start printing the info to the round files
+4.)Start refactoring everything to the correct classes so that round objects are made when new rounds are created.
+5.)Start working on making the round information in the text file parse the correct map from the log - relates to level stats.

@@ -31,17 +31,6 @@ public class Main {
         boolean AddNewSession = true;
         File roundFile = null;
 
-        //TODO: NEED TO FIX AN ISSUE THAT WHEN WE START THE APPLICATION MID SESSION OF A GAME IT CREATES DUPLICATE FILES.
-        //WHEN PROCESS STARTS AND WE START READING THE FILE SKIP AND GO TO THE END RIGHT AWAY FOR THE FIRST TIME TO MAKE SURE
-        //ANY PREVIOUS STUFF IS NOT READ AND WE START RIGHT FROM THE BOTTOM
-
-        //Also fix that when you are not qualified and continue spectating it keeps creating round info for you
-
-        //find a way to also aggregate all the files for rounds into one at the end of the match
-
-        //find a way to go over every single round after a match and add the missing info i cannot get at real time.
-
-        //Keep the program running so we can keep rechecking till fallguys opens again.
 
         boolean JustLaunchedFirstSkip = false;
         RandomAccessFile raf = null;
@@ -159,6 +148,8 @@ public class Main {
                             CurrRoundNumWriting = RoundNum;
                             System.out.println("Map name is: " + MapName);
                             System.out.println("Current round number is : " + RoundNum);
+
+
                             roundInfoCounter--;
                             printRoundInfo = true;
                         }
@@ -242,7 +233,7 @@ public class Main {
     }
 
     public static void PrintOutEndInfo() {
-        System.out.println("The file size in mb: " + String.format("%.2f", new File(pathToPlayerLog).length() / (1.049 * Math.pow(10, 6))));
+        System.out.println("The file size in mb(mebibytes): " + String.format("%.2f", new File(pathToPlayerLog).length() / (1.049 * Math.pow(10, 6))));
         System.out.println("The total amount of lines we read: " + lineCount);
         System.out.println("The total amount of games played this session is: " + gamesPlayed);
         System.out.println("The most recent playerid is : " + currentPlayerID);
