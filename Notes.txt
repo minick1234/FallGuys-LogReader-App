@@ -1,0 +1,46 @@
+Currently the issue we fall into is that the information for the rounds are only printed when the match is completed. But in order to grab alot of the information we can just 
+find the info through the certain log messages and derive which interperts what.
+
+//Prints when we load into the server.
+[StateConnectToGame] We're connected to the server!
+
+//This prints with your specific id when you have either finished or not finished the round - the boolean is suceeded.
+ClientGameManager::HandleServerPlayerProgress PlayerId=10 is succeeded=false
+
+//Prints when loading a new map. 
+//This can be used for example to check if the round is finished and when we load a new map. 
+[StateGameLoading] Finished loading game level, assumed to be
+
+//Prints when we leave the server
+[FG_UnityInternetNetworkManager] FG_NetworkManager shutdown completed!
+
+//This tells us when the level loaded, and when the countdown is starting for all the users
+[GameSession] Changing state from Precountdown to Countdown
+
+21:12:50.119: [GameSession] Changing state from Countdown to Playing
+
+
+using the information above for the countdown and the player handle server player progress, we can subtract the time difference between them
+to give us the total time it took us to finish the round, since the count of the round takes 3 seconds at the begining we can subtract 3 seconds and it will give us the exact time.
+or we can use the exact time that it changed state from countdown to playing. 
+
+
+//In order for us to get the placement that we got before the round info prints, we count out all the users who suceeded before us and whatever the count is for where we are in
+relation to where they were iwll tell us our placement
+
+//We can also get the total amount of players that there was in that game by counting out all the players who loaded and spawned for that round.
+21:12:39.392: [ClientGameManager] Handling bootstrap for remote player FallGuy [202] (FG.Common.MPGNetObject), playerID = 14, squadID = 0
+21:12:39.393: [StateGameLoading] OnPlayerSpawned - NetID=202 ID=14 was spawned
+
+
+21:12:45.130: [CameraDirector] Set Local Party ID: 
+
+
+[StateMatchmaking] Begin matchmaking solo
+
+[EOSPartyPlatformService]: Invite Received - Lobby Invite:
+[EOSPartyPlatformService]
+
+
+//tHIS determines if we currently quit the match and disconnect.
+[ClientGlobalGameState] Client has been disconnected

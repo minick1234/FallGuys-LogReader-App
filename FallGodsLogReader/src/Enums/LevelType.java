@@ -1,3 +1,5 @@
+package Enums;
+
 public enum LevelType {
     Unknown,
     CreativeRace,
