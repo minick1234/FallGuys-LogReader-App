@@ -2,24 +2,18 @@ import Enums.LevelType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 class LevelStats {
 
     String id;
     String name;
-    int qualified;
-    int gold;
-    int silver;
-    int bronze;
-    int played;
-    int kudos;
     boolean isCreative;
     boolean isFinal;
     int timeLimitInSeconds;
     int timeLimitInSecondsForSquad;
     int season;
-    int finishedCount;
 
     ArrayList<Round> stats;
 
@@ -35,17 +29,6 @@ class LevelStats {
         this.timeLimitInSeconds = timeLimitInSeconds;
         this.timeLimitInSecondsForSquad = timeLimitInSecondsForSquad;
         this.stats = new ArrayList<Round>();
-    }
-
-    public void Clear() {
-        this.qualified = 0;
-        this.gold = 0;
-        this.silver = 0;
-        this.bronze = 0;
-        this.played = 0;
-        this.kudos = 0;
-        this.finishedCount = 0;
-        this.stats.clear();
     }
 
     public static Map<String, LevelStats> ALLMAPS = new HashMap<>();
@@ -92,10 +75,10 @@ class LevelStats {
         ALLMAPS.put("wle_s10_orig_round_043", new LevelStats("wle_s10_orig_round_043", "Trouble Tower", LevelType.Race, true, false, 10, 0, 0));
         ALLMAPS.put("wle_s10_orig_round_044", new LevelStats("wle_s10_orig_round_044", "Serpent Slalom", LevelType.Race, true, false, 10, 0, 0));
 
-        // ALLMAPS.put("wle_s10_orig_round_045", new LevelStats("wle_s10_orig_round_045", "Floorless", Enums.LevelType.Race, true, false, 10, 0, 0));
-        // ALLMAPS.put("wle_s10_orig_round_046", new LevelStats("wle_s10_orig_round_046", "In The Cloud", Enums.LevelType.Race, true, false, 10, 0, 0));
-        // ALLMAPS.put("wle_s10_orig_round_047", new LevelStats("wle_s10_orig_round_047", "Downstream Duel", Enums.LevelType.Race, true, false, 10, 0, 0));
-        // ALLMAPS.put("wle_s10_orig_round_048", new LevelStats("wle_s10_orig_round_048", "Lost Palace", Enums.LevelType.Race, true, false, 10, 0, 0));
+        ALLMAPS.put("wle_s10_orig_round_045", new LevelStats("wle_s10_orig_round_045", "Floorless", Enums.LevelType.Race, true, false, 10, 0, 0));
+        ALLMAPS.put("wle_s10_orig_round_046", new LevelStats("wle_s10_orig_round_046", "In The Cloud", Enums.LevelType.Race, true, false, 10, 0, 0));
+        ALLMAPS.put("wle_s10_orig_round_047", new LevelStats("wle_s10_orig_round_047", "Downstream Duel", Enums.LevelType.Race, true, false, 10, 0, 0));
+        ALLMAPS.put("wle_s10_orig_round_048", new LevelStats("wle_s10_orig_round_048", "Lost Palace", Enums.LevelType.Race, true, false, 10, 0, 0));
 
         ALLMAPS.put("wle_s10_orig_round_045_long", new LevelStats("wle_s10_orig_round_045_long", "Floorless", LevelType.Race, true, false, 10, 0, 0));
         ALLMAPS.put("wle_s10_long_round_003", new LevelStats("wle_s10_long_round_003", "Fall Speedway", LevelType.Race, true, false, 10, 0, 0));
@@ -382,7 +365,7 @@ class LevelStats {
         ALLMAPS.put("round_slimeclimb_2", new LevelStats("round_slimeclimb_2", "The Slimescraper", LevelType.Race, false, false, 4, 190, 190));
         ALLMAPS.put("round_gauntlet_03", new LevelStats("round_gauntlet_03", "The Whirlygig", LevelType.Race, false, false, 1, 180, 120));
         ALLMAPS.put("round_tip_toe", new LevelStats("round_tip_toe", "Tip Toe", LevelType.Race, false, false, 1, 300, 120));
-        ALLMAPS.put("round_gauntlet_09_symphony_launch_show", new LevelStats("round_gauntlet_09_symphony_launch_show", "Track Attack", LevelType.Race, false, false, 7, 90, 90));
+        ALLMAPS.put("round_gauntlet_09", new LevelStats("round_gauntlet_09", "Track Attack", LevelType.Race, false, false, 7, 90, 90));
         ALLMAPS.put("round_gauntlet_07", new LevelStats("round_gauntlet_07", "Treetop Tumble", LevelType.Race, false, false, 5, 180, 120));
         ALLMAPS.put("round_gauntlet_05", new LevelStats("round_gauntlet_05", "Tundra Run", LevelType.Race, false, false, 3, 180, 120));
         ALLMAPS.put("round_wall_guys", new LevelStats("round_wall_guys", "Wall Guys", LevelType.Race, false, false, 2, 300, 120));
@@ -391,7 +374,7 @@ class LevelStats {
         ALLMAPS.put("round_hoops_revenge_symphony_launch_show", new LevelStats("round_hoops_revenge_symphony_launch_show", "Bounce Party", LevelType.Hunt, false, false, 7, 300, 300));
         ALLMAPS.put("round_king_of_the_hill", new LevelStats("round_king_of_the_hill", "Bubble Trouble", LevelType.Hunt, false, false, 5, 300, 300));
         ALLMAPS.put("round_1v1_button_basher", new LevelStats("round_1v1_button_basher", "Button Bashers", LevelType.Hunt, false, false, 4, 90, 90));
-        ALLMAPS.put("round_ffa_button_bashers_squads_almond", new LevelStats("round_ffa_button_bashers_squads_almond", "Frantic Factory", LevelType.Hunt, false, false, 8, 300, 300));
+        ALLMAPS.put("round_ffa_button_bashers", new LevelStats("round_ffa_button_bashers", "Frantic Factory", LevelType.Hunt, false, false, 8, 300, 300));
         ALLMAPS.put("round_slippy_slide", new LevelStats("round_slippy_slide", "Hoop Chute", LevelType.Hunt, false, false, 9, 180, 180));
         ALLMAPS.put("round_hoops_blockade_solo", new LevelStats("round_hoops_blockade_solo", "Hoopsie Legends", LevelType.Hunt, false, false, 2, 300, 300));
         ALLMAPS.put("round_penguin_solos", new LevelStats("round_penguin_solos", "Pegwin Pool Party", LevelType.Hunt, false, false, 5, 300, 300));
@@ -431,8 +414,8 @@ class LevelStats {
         ALLMAPS.put("round_blastball_arenasurvival_symphony_launch_show", new LevelStats("round_blastball_arenasurvival_symphony_launch_show", "Blast Ball", LevelType.Survival, false, true, 7, 270, 270));
         ALLMAPS.put("round_fall_mountain_hub_complete", new LevelStats("round_fall_mountain_hub_complete", "Fall Mountain", LevelType.Race, false, true, 1, 300, 300));
         ALLMAPS.put("round_floor_fall", new LevelStats("round_floor_fall", "Hex-A-Gone", LevelType.Survival, false, true, 1, 300, 300));
-        ALLMAPS.put("round_hexaring_symphony_launch_show", new LevelStats("round_hexaring_symphony_launch_show", "Hex-A-Ring", LevelType.Survival, false, true, 7, 300, 300));
-        ALLMAPS.put("round_hexsnake_almond", new LevelStats("round_hexsnake_almond", "Hex-A-Terrestrial", LevelType.Survival, false, true, 8, 300, 300));
+        ALLMAPS.put("round_hexaring", new LevelStats("round_hexaring", "Hex-A-Ring", LevelType.Survival, false, true, 7, 300, 300));
+        ALLMAPS.put("round_hexsnake", new LevelStats("round_hexsnake", "Hex-A-Terrestrial", LevelType.Survival, false, true, 8, 300, 300));
         ALLMAPS.put("round_jump_showdown", new LevelStats("round_jump_showdown", "Jump Showdown", LevelType.Survival, false, true, 1, 300, 300));
         ALLMAPS.put("round_kraken_attack", new LevelStats("round_kraken_attack", "Kraken Slam", LevelType.Survival, false, true, 9, 300, 300));
         ALLMAPS.put("round_crown_maze", new LevelStats("round_crown_maze", "Lost Temple", LevelType.Race, false, true, 5, 300, 300));
@@ -440,12 +423,9 @@ class LevelStats {
         ALLMAPS.put("round_royal_rumble", new LevelStats("round_royal_rumble", "Royal Fumble", LevelType.Hunt, false, true, 1, 90, 90));
         ALLMAPS.put("round_thin_ice", new LevelStats("round_thin_ice", "Thin Ice", LevelType.Survival, false, true, 3, 300, 300));
         ALLMAPS.put("round_tiptoefinale_almond", new LevelStats("round_tiptoefinale_almond", "Tip Toe Finale", LevelType.Survival, false, true, 8, 300, 300));
-
     }
 
     public static HashMap<String, String> AllScenesToRound = new HashMap<>();
-
-    //Conversion of the names from the log map, to the actual ingame name of the map.
     static {
         AllScenesToRound.put("FallGuy_DoorDash", "round_door_dash");
         AllScenesToRound.put("FallGuy_Gauntlet_02_01", "round_gauntlet_02");
@@ -510,18 +490,18 @@ class LevelStats {
         AllScenesToRound.put("FallGuy_BlueJay", "round_bluejay");
         AllScenesToRound.put("FallGuy_HoopsRevenge", "round_hoops_revenge_symphony_launch_show");
         AllScenesToRound.put("FallGuy_ShortCircuit2", "round_short_circuit_2_symphony_launch_show");
-        AllScenesToRound.put("FallGuy_Gauntlet_09", "round_gauntlet_09_symphony_launch_show");
+        AllScenesToRound.put("FallGuy_Gauntlet_09", "round_gauntlet_09");
         AllScenesToRound.put("FallGuy_SpinRing", "round_spin_ring_symphony_launch_show");
         AllScenesToRound.put("FallGuy_1v1_Volleyfall", "round_1v1_volleyfall_symphony_launch_show");
         AllScenesToRound.put("FallGuy_BlastBall_ArenaSurvival", "round_blastball_arenasurvival_symphony_launch_show");
-        AllScenesToRound.put("FallGuy_HexARing", "round_hexaring_symphony_launch_show");
+        AllScenesToRound.put("FallGuy_HexARing", "round_hexaring");
         AllScenesToRound.put("FallGuy_SatelliteHoppers", "round_satellitehoppers_almond");
-        AllScenesToRound.put("FallGuy_FFA_Button_Bashers", "round_ffa_button_bashers_squads_almond");
+        AllScenesToRound.put("FallGuy_FFA_Button_Bashers", "round_ffa_button_bashers");
         AllScenesToRound.put("FallGuy_Hoverboard_Survival_2", "round_hoverboardsurvival2_almond");
         AllScenesToRound.put("FallGuy_PixelPerfect", "round_pixelperfect_almond");
         AllScenesToRound.put("FallGuy_Gauntlet_10", "round_gauntlet_10_almond");
         AllScenesToRound.put("FallGuy_Starlink", "round_starlink_almond");
-        AllScenesToRound.put("FallGuy_HexSnake", "round_hexsnake_almond");
+        AllScenesToRound.put("FallGuy_HexSnake", "round_hexsnake");
         AllScenesToRound.put("FallGuy_Tip_Toe_Finale", "round_tiptoefinale_almond");
         AllScenesToRound.put("FallGuy_BlastBallRuins", "round_blastballruins");
         AllScenesToRound.put("FallGuy_FollowTheLine", "round_follow_the_line");

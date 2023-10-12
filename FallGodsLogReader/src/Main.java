@@ -35,6 +35,7 @@ public class Main {
 
         boolean JustLaunchedFirstSkip = false;
         RandomAccessFile raf = null;
+        boolean PrintedEndOfMatchInfo = false;
 
         while (true) {
 
@@ -86,10 +87,12 @@ public class Main {
                                     } else {
                                         DisconnectedPrematurely = true;
                                     }
+                                } else {
+                                    System.out.println("Next line is null so we stop reading - waiting for rewards area.");
                                 }
                             }
 
-                            if (DisconnectedPrematurely) {
+                            if (DisconnectedPrematurely && !PrintedEndOfMatchInfo) {
                                 System.out.println("No reward line found.");
                                 System.out.println("We have disconnected prematurely");
                                 DisconnectedPrematurely = false;
@@ -115,12 +118,12 @@ public class Main {
                                 roundFile = null;
                             }
 
+                            PrintedEndOfMatchInfo = false;
                             System.out.println("\nReturning to normal file search position - and reading normally again");
                             raf.seek(savedNormalPosition);
                         }
 
                         if (printRoundInfo && roundInfoCounter > 0) {
-
                             ReadRoundInfo(currentLine, roundFile);
 
                             //if the match is not started by this point and we have actually got here it means we ran
@@ -129,8 +132,7 @@ public class Main {
                             //and if its false, create a new match folder and new round info for these rounds
 
                             if (!matchStarted) {
-                                System.out.println("Match has not started and we are here\n" +
-                                        "This means we were mid match when we started the program");
+                                System.out.println("Match has not started and we are here\n" + "This means we were mid match when we started the program");
                             }
 
                             roundInfoCounter--;
@@ -159,16 +161,53 @@ public class Main {
                         }
 
                         if (currentLine.contains("[Round")) {
+
+                            // for the majority this function below works really well.
+                            //some maps tho are not correct in the log so its hard too determine what it is.
+                            //when these maps are not found we need to adjust for them accordingly in the level stats.
+                            //this is cause the old
+
+                            PrintedEndOfMatchInfo = true;
+
                             String[] roundLineInTwo = currentLine.split("\\|");
-                            System.out.println("RoundlineinTwo 0 : " + roundLineInTwo[0] + "\n RoundlineinTwo 1: " + roundLineInTwo[1]);
                             int RoundNum = Integer.parseInt(roundLineInTwo[0].split(" ")[1].trim());
-                            String MapName = roundLineInTwo[1].trim().substring(0, roundLineInTwo[1].length() - 2);
+
+                            String[] MapNameSplit = roundLineInTwo[1].trim().split("_");
+                            String RealMapName = "";
+
+                            boolean ValidMapALLMAPS = false;
+
+                            if (LevelStats.ALLMAPS.get(roundLineInTwo[1].trim().substring(0, roundLineInTwo[1].length() - 2)) == null) {
+                                for (int i = 0; i < MapNameSplit.length; i++) {
+                                    RealMapName += MapNameSplit[i];
+                                    if (LevelStats.ALLMAPS.get(RealMapName) != null) {
+                                        ValidMapALLMAPS = true;
+                                        break;
+                                    }
+                                    System.out.println("Map name so far: #1 " + RealMapName);
+
+                                    if (i < MapNameSplit.length - 1) {
+                                        RealMapName += "_";
+                                    }
+                                    System.out.println("Map name so far: #2 " + RealMapName);
+
+                                }
+                                if (!ValidMapALLMAPS) {
+                                    RealMapName = roundLineInTwo[1].trim().substring(0, roundLineInTwo[1].length() - 2);
+                                }
+                            } else {
+                                System.out.println("i am in here.");
+                                RealMapName = roundLineInTwo[1].trim().substring(0, roundLineInTwo[1].length() - 2);
+                            }
+
                             CurrRoundNumWriting = RoundNum;
-                            System.out.println("Map name is: " + MapName);
-                            System.out.println("Map name converted to correct value: " + LevelStats.ALLMAPS.get(MapName).name);
+                            System.out.println("Map name from log is: " + RealMapName);
                             System.out.println("Current round number is : " + RoundNum);
-
-
+                            if (ValidMapALLMAPS) {
+                                System.out.println("Map name converted to correct value: " + LevelStats.ALLMAPS.get(RealMapName).name);
+                            } else {
+                                System.out.println("Unfortunately this is not a valid map. That can be converted");
+                            }
                             roundInfoCounter--;
                             printRoundInfo = true;
                         }
@@ -183,13 +222,13 @@ public class Main {
                     }
                     lastKnownLength = raf.getFilePointer();
                 }
-                //If the file has not updated or changed in any way we print out this info.
-                //     PrintOutEndInfo();
-
-                //Close the file reader and buffered reader.
-                raf.close();
-                raf = null;
             }
+            //If the file has not updated or changed in any way we print out this info.
+            //     PrintOutEndInfo();
+
+            //Close the file reader and buffered reader.
+            raf.close();
+            raf = null;
 
             //At this point, the session has stopped, so reset the number of rounds and matches to 0, for the new session when it starts.
             numberOfMatches = 0;
@@ -205,7 +244,6 @@ public class Main {
                 System.out.println(e.getMessage());
             }
         }
-
     }
 
     public static void PrepareReadFile() {
