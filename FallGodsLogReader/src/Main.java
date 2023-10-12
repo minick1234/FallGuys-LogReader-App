@@ -14,6 +14,8 @@ public class Main {
     private static ArrayList<String> MapPlayedSoFarInOrder = new ArrayList<String>();
     private static long lastKnownLength = 0, lineCount = 0;
 
+    private static int CurrRoundNumWriting = 0;
+
     public static void main(String[] args) throws IOException {
 
         //The current line we are reading from the file.
@@ -27,6 +29,7 @@ public class Main {
         File DefaultDirectory = CheckForDefaultLogsStorageFolder();
 
         boolean AddNewSession = true;
+        File roundFile = null;
 
         //TODO: NEED TO FIX AN ISSUE THAT WHEN WE START THE APPLICATION MID SESSION OF A GAME IT CREATES DUPLICATE FILES.
         //WHEN PROCESS STARTS AND WE START READING THE FILE SKIP AND GO TO THE END RIGHT AWAY FOR THE FIRST TIME TO MAKE SURE
@@ -39,11 +42,17 @@ public class Main {
         //find a way to go over every single round after a match and add the missing info i cannot get at real time.
 
         //Keep the program running so we can keep rechecking till fallguys opens again.
+
+        boolean JustLaunchedFirstSkip = false;
+        RandomAccessFile raf = null;
+
         while (true) {
 
             File SessionFolderDirectory = null;
             File MatchFolderDirectory = null;
             boolean matchStarted = false;
+
+            boolean DisconnectedPrematurely = false;
 
             //Only continue checking this file if we are still playing fall guys.
             while (IsProcessStillRunning()) {
@@ -54,21 +63,69 @@ public class Main {
                     SessionFolderDirectory = CreateNewSessionFolder(DefaultDirectory, SessionFolderDirectory);
                 }
 
-                FileReader fr = PrepareReadFile();
-                //Open buffered reader to read the information inside the file.
-                BufferedReader br = new BufferedReader(fr);
+                if (raf == null) {
+                    PrepareReadFile();
+                    raf = new RandomAccessFile(pathToPlayerLog, "r");
+                }
 
-                long fileLength = new File(pathToPlayerLog).length();
+                if (!JustLaunchedFirstSkip) {
+                    raf.seek(raf.length());
+                    JustLaunchedFirstSkip = true;
+                    lastKnownLength = raf.length();
+                }
 
-                if (fileLength > lastKnownLength) {
-                    fr.skip(lastKnownLength);
-                    File roundFile;
-
-                    while ((currentLine = br.readLine()) != null) {
+                if (raf.length() > lastKnownLength) {
+                    raf.seek(lastKnownLength);
+                    while ((currentLine = raf.readLine()) != null) {
+                        //count up the line count for debugging purposes.
                         ++lineCount;
 
+                        if (currentLine.contains("[HazelNetworkTransport] Disconnect request received for connection 0. Reason: HazelNetworkTransport - Disconnect")) {
+                            System.out.println("We have left the lobby.");
+
+                            long savedNormalPosition = raf.getFilePointer();
+
+                            for (int i = 0; i < 10; i++) {
+                                String nextLine = raf.readLine();
+                                if (nextLine != null) {
+                                    if (nextLine.contains("[StateWaitingForRewards] Init: waitingForRewards = ")) {
+                                        DisconnectedPrematurely = true;
+                                        break;
+                                    }
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            if (DisconnectedPrematurely) {
+                                System.out.println("We have disconnected prematurely to the match ending/Or we were eliminated.");
+                                DisconnectedPrematurely = false;
+                                //If we leave the match early we want to be sure to stop the current match check.
+                                matchStarted = false;
+
+                                //Reset the round and match folder to null to allow for appropriate creation again.
+                                MatchFolderDirectory = null;
+                                roundFile = null;
+                                DisconnectedPrematurely = false;
+                                break;
+                            }
+                            raf.seek(savedNormalPosition);
+                        }
+
                         if (printRoundInfo && roundInfoCounter > 0) {
-                            ReadRoundInfo(currentLine);
+
+                            ReadRoundInfo(currentLine, roundFile);
+
+                            //if the match is not started by this point and we have actually got here it means we ran
+                            //the program while the game was already in a match.
+                            //therefore we need to check for if match has started
+                            //and if its false, create a new match folder and new round info for these rounds
+
+                            if (!matchStarted) {
+                                System.out.println("Match has not started and we are here\n" +
+                                        "This means we were mid match when we started the program");
+                            }
+
                             roundInfoCounter--;
                         } else if (printRoundInfo) {
                             printRoundInfo = false;
@@ -93,10 +150,17 @@ public class Main {
                         if (currentLine.contains("== [CompletedEpisodeDto] ==")) {
                             gamesPlayed++;
                         }
+
                         if (currentLine.contains("[Round")) {
-                            --roundInfoCounter;
+                            String[] roundLineInTwo = currentLine.split("\\|");
+                            System.out.println("RoundlineinTwo 0 : " + roundLineInTwo[0] + "\n RoundlineinTwo 1: " + roundLineInTwo[1]);
+                            int RoundNum = Integer.parseInt(roundLineInTwo[0].split(" ")[1].trim());
+                            String MapName = roundLineInTwo[1].trim().substring(0, roundLineInTwo[1].length() - 2);
+                            CurrRoundNumWriting = RoundNum;
+                            System.out.println("Map name is: " + MapName);
+                            System.out.println("Current round number is : " + RoundNum);
+                            roundInfoCounter--;
                             printRoundInfo = true;
-                            System.out.println(currentLine);
                         }
 
                         if (currentLine.contains("[ClientGlobalGameState] Client has been disconnected")) {
@@ -107,21 +171,14 @@ public class Main {
                             UpdatePlayerID(currentLine);
                         }
                     }
-                    lastKnownLength = fileLength;
+                    lastKnownLength = raf.getFilePointer();
                 }
                 //If the file has not updated or changed in any way we print out this info.
                 //     PrintOutEndInfo();
 
-                //Let this loop sleep for 2 seconds before rechecking the file for new changes.
-                try {
-                    Thread.sleep(2000);
-                } catch (IllegalArgumentException | InterruptedException e) {
-                    System.out.println(e.getMessage());
-                }
-
                 //Close the file reader and buffered reader.
-                br.close();
-                fr.close();
+                raf.close();
+                raf = null;
             }
 
             //At this point, the session has stopped, so reset the number of rounds and matches to 0, for the new session when it starts.
@@ -141,27 +198,13 @@ public class Main {
 
     }
 
-    public static FileReader PrepareReadFile() {
-
+    public static void PrepareReadFile() {
         //Attempt to get the %AppData%
         try {
             pathToPlayerLog = System.getenv("AppData") + "\\..\\LocalLow\\Mediatonic\\FallGuys_client\\Player.log";
         } catch (SecurityException | NullPointerException e) {
             System.out.println("The environment path cannot be found");
         }
-
-        //Find the file and begin the file reader.
-        File file = new File(pathToPlayerLog);
-        FileReader fr = null;
-        try {
-            fr = new FileReader(file);
-        } catch (FileNotFoundException e) {
-            System.out.println("The file has not been found!");
-        }
-        if (fr != null) {
-            return fr;
-        }
-        return null;
     }
 
     //Checks for if the process is running, this determines if we should continue checking the file for updates.
@@ -206,7 +249,10 @@ public class Main {
     }
 
     //Reads the current lines round info and assigns it to the values for the correct object.
-    public static void ReadRoundInfo(String currentLine) {
+    public static void ReadRoundInfo(String currentLine, File currentRoundFile) {
+
+        //Start printing out the information for the current round information at the end of the match
+
         System.out.println(currentLine);
     }
 
@@ -229,6 +275,32 @@ public class Main {
         return false;
     }
 
+    //Checks if the round that we want to write to exists as a file
+    public boolean CheckIfRoundFileAlreadyExists(File matchFolderDirectory, int roundNumber) {
+        File[] roundFiles = matchFolderDirectory.listFiles(File::isFile);
+        File newRoundTextFile = null;
+
+        if (roundFiles != null && roundFiles.length > 0) {
+            for (File roundFile : roundFiles) {
+                String roundFileWithExtension = roundFile.getName().trim().split("_")[1];
+                if (roundNumber == Integer.parseInt(roundFileWithExtension.trim().split("\\.")[0])) {
+                    System.out.println("Found a round file of the same round number.");
+                    return true;
+                }
+            }
+        } else {
+            System.out.println("No files inside this match directory of type round.");
+        }
+
+        return false;
+    }
+
+    //Write the information to this file.
+    public static void AppendToPreviousRoundFile(File matchFolderDirectory, int roundToAppendTo) {
+
+
+    }
+
     public static File CreateNewRoundFile(File matchFolderDirectory) {
         File[] roundFiles = matchFolderDirectory.listFiles(File::isFile);
         File newRoundTextFile = null;
@@ -247,7 +319,7 @@ public class Main {
             }
 
         } else {
-            newRoundTextFile = new File(matchFolderDirectory.getPath() + "\\Round_1.txt");
+            newRoundTextFile = new File(matchFolderDirectory.getPath() + "\\Round_0.txt");
             try {
                 newRoundTextFile.createNewFile();
 
