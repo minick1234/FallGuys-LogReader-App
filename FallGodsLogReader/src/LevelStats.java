@@ -18,11 +18,8 @@ class LevelStats {
     boolean isFinal;
     int timeLimitInSeconds;
     int timeLimitInSecondsForSquad;
-
     int season;
     int finishedCount;
-
-    //Need to track the durations and times here.
 
     ArrayList<Round> stats;
 

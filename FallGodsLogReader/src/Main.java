@@ -7,6 +7,7 @@ import java.lang.SecurityException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 public class Main {
     private static int currentPlayerID = -1, currentPartyID = -1, gamesPlayed = 0, numberOfSessions = 0, numberOfMatches = 0, numberOfRounds = 0;
@@ -69,7 +70,7 @@ public class Main {
                         //count up the line count for debugging purposes.
                         ++lineCount;
 
-                        if (currentLine.contains("[HazelNetworkTransport] Disconnect request received for connection 0. Reason: HazelNetworkTransport - Disconnect")) {
+                        if (currentLine.contains("[Hazel] [HazelNetworkTransport] Disconnect request received for connection 0. Reason: HazelNetworkTransport - Disconnect")) {
                             System.out.println("We have left the lobby.");
 
                             long savedNormalPosition = raf.getFilePointer();
@@ -77,27 +78,44 @@ public class Main {
                             for (int i = 0; i < 10; i++) {
                                 String nextLine = raf.readLine();
                                 if (nextLine != null) {
+                                    System.out.println("Checking for reward line...");
                                     if (nextLine.contains("[StateWaitingForRewards] Init: waitingForRewards = ")) {
-                                        DisconnectedPrematurely = true;
+                                        System.out.println("Found reward line");
+                                        DisconnectedPrematurely = false;
                                         break;
+                                    } else {
+                                        DisconnectedPrematurely = true;
                                     }
-                                } else {
-                                    break;
                                 }
                             }
 
                             if (DisconnectedPrematurely) {
-                                System.out.println("We have disconnected prematurely to the match ending/Or we were eliminated.");
+                                System.out.println("No reward line found.");
+                                System.out.println("We have disconnected prematurely");
                                 DisconnectedPrematurely = false;
                                 //If we leave the match early we want to be sure to stop the current match check.
                                 matchStarted = false;
 
+                                if (Files.isDirectory(MatchFolderDirectory.toPath())) {
+                                    try (Stream<Path> files = Files.list(MatchFolderDirectory.toPath())) {
+                                        files.filter(Files::isRegularFile).forEach(file -> {
+                                            try {
+                                                Files.deleteIfExists(file);
+                                            } catch (IOException e) {
+                                                throw new UncheckedIOException(e);
+                                            }
+                                        });
+                                    }
+                                }
+
+                                Files.deleteIfExists(MatchFolderDirectory.toPath());
+
                                 //Reset the round and match folder to null to allow for appropriate creation again.
                                 MatchFolderDirectory = null;
                                 roundFile = null;
-                                DisconnectedPrematurely = false;
-                                break;
                             }
+
+                            System.out.println("\nReturning to normal file search position - and reading normally again");
                             raf.seek(savedNormalPosition);
                         }
 
@@ -147,6 +165,7 @@ public class Main {
                             String MapName = roundLineInTwo[1].trim().substring(0, roundLineInTwo[1].length() - 2);
                             CurrRoundNumWriting = RoundNum;
                             System.out.println("Map name is: " + MapName);
+                            System.out.println("Map name converted to correct value: " + LevelStats.ALLMAPS.get(MapName).name);
                             System.out.println("Current round number is : " + RoundNum);
 
 
