@@ -1,7 +1,28 @@
 TODO / CHANGES TO MAKE:
+== Find a way to also aggregate all the files for rounds into one at the end of the match
 
-1.)Find a way to also aggregate all the files for rounds into one at the end of the match
-2.)Find a way to go over every single round after a match and add the missing info i cannot get at real time.
-3.)Start printing the info to the round files
-4.)Start refactoring everything to the correct classes so that round objects are made when new rounds are created.
-5.)Start working on making the round information in the text file parse the correct map from the log - relates to level stats.
+== Find a way to go over every single round after a match and add the missing info i cannot get at real time.
+
+== Start printing the info to the round files
+
+== Start refactoring everything to the correct classes so that round objects are made when new rounds are created.
+
+== Lots of refactoring needs to be done for simplicity sake.
+
+== Start printing the correct player id each game for the player and start retrieving the real time data for duration of round, player id, placement, map id. - the rest of it all can only be retrieved end of match unfortunately.
+
+== Clean up older game session files if they dont contain any matches / dont contain any rounds inside the matches folders
+   this means those are just a waste of space and we can remove them so it doesnt bloat our logging folder.
+
+
+*TODO'S TASKS* FINISHED AND FIXES THAT WERE MADE:
+== Start working on making the round information in the text file parse the correct map from the log - relates to level stats.
+
+== Fix so that it deletes the appropriate match folder and its child files for round if we leave the game prematurely.
+
+== Fix premature check to make sure that it isnt true when we finish the game all the way but don't win - for some reason the log file takes a while to print while its doing its ending animation and this causes the check i have to return null for a while
+    to get around this i am now doing something where if the end of game round info is printed we can assume we made it through the whole match and then check with a boolean to not print if the match as printed end of match info.
+
+== Fix issue where some maps are not recognized by our level stat hash map because of changes fall guys made to the logs, so we need to correct for those changes and mistakes so they can be loaded normally and recognized correctly
+
+== Have a fix for if the map doesnt exist we just avoid printing it out so that we avoid sending false data to the server when we don't know the map name either because of a new update or changes to the logs.

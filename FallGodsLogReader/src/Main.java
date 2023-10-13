@@ -45,18 +45,17 @@ public class Main {
 
             boolean DisconnectedPrematurely = false;
 
+            if (raf == null) {
+                PrepareReadFile();
+                raf = new RandomAccessFile(pathToPlayerLog, "r");
+            }
+
             //Only continue checking this file if we are still playing fall guys.
             while (IsProcessStillRunning()) {
-
                 //Add a new session
                 if (AddNewSession) {
                     AddNewSession = false;
                     SessionFolderDirectory = CreateNewSessionFolder(DefaultDirectory, SessionFolderDirectory);
-                }
-
-                if (raf == null) {
-                    PrepareReadFile();
-                    raf = new RandomAccessFile(pathToPlayerLog, "r");
                 }
 
                 if (!JustLaunchedFirstSkip) {
@@ -80,8 +79,21 @@ public class Main {
                                 String nextLine = raf.readLine();
                                 if (nextLine != null) {
                                     System.out.println("Checking for reward line...");
+
+                                    //If we are in the disconnect and we have finished the match and the info printed.
+                                    //we want to sleep for 10 seconds to let the file update.
+                                    //then we can read what it finds.
+                                    if (PrintedEndOfMatchInfo) {
+                                        try {
+                                            Thread.sleep(10000);
+
+                                        } catch (InterruptedException e) {
+                                            System.out.println("There was an error on thread sleep: \n" + e.getMessage());
+                                        }
+                                    }
+
                                     if (nextLine.contains("[StateWaitingForRewards] Init: waitingForRewards = ")) {
-                                        System.out.println("Found reward line");
+                                        System.out.println("We have found the rewards line.");
                                         DisconnectedPrematurely = false;
                                         break;
                                     } else {
@@ -144,6 +156,7 @@ public class Main {
                         if (currentLine.contains("[StateConnectToGame] We're connected to the server!")) {
                             MatchFolderDirectory = CreateNewMatchFolder(SessionFolderDirectory);
                             matchStarted = true;
+
                         } else if (matchStarted) {
                             if (currentLine.contains("[StateGameLoading] Finished loading game level, assumed to be")) {
                                 roundFile = CreateNewRoundFile(MatchFolderDirectory);
@@ -168,7 +181,6 @@ public class Main {
                             //this is cause the old
 
                             PrintedEndOfMatchInfo = true;
-
                             String[] roundLineInTwo = currentLine.split("\\|");
                             int RoundNum = Integer.parseInt(roundLineInTwo[0].split(" ")[1].trim());
 
@@ -227,9 +239,10 @@ public class Main {
             //     PrintOutEndInfo();
 
             //Close the file reader and buffered reader.
-            raf.close();
-            raf = null;
-
+            if (raf != null) {
+                raf.close();
+                raf = null;
+            }
             //At this point, the session has stopped, so reset the number of rounds and matches to 0, for the new session when it starts.
             numberOfMatches = 0;
             numberOfRounds = 0;
@@ -425,6 +438,5 @@ public class Main {
         }
         return DefaultDirectory;
     }
-
 
 }

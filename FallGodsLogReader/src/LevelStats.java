@@ -390,7 +390,7 @@ class LevelStats {
         ALLMAPS.put("round_tunnel", new LevelStats("round_tunnel", "Roll Out", LevelType.Survival, false, false, 1, 150, 90));
         ALLMAPS.put("round_snowballsurvival", new LevelStats("round_snowballsurvival", "Snowball Survival", LevelType.Survival, false, false, 3, 60, 60));
         ALLMAPS.put("round_robotrampage_arena_2", new LevelStats("round_robotrampage_arena_2", "Stompin' Ground", LevelType.Survival, false, false, 5, 70, 70));
-        ALLMAPS.put("round_spin_ring_symphony_launch_show", new LevelStats("round_spin_ring_symphony_launch_show", "The Swiveller", LevelType.Survival, false, false, 7, 180, 180));
+        ALLMAPS.put("round_spin_ring", new LevelStats("round_spin_ring", "The Swiveller", LevelType.Survival, false, false, 7, 180, 180));
 
         ALLMAPS.put("round_match_fall", new LevelStats("round_match_fall", "Perfect Match", LevelType.Logic, false, false, 1, 80, 80));
         ALLMAPS.put("round_pixelperfect_almond", new LevelStats("round_pixelperfect_almond", "Pixel Painters", LevelType.Logic, false, false, 8, 180, 180));
@@ -491,7 +491,7 @@ class LevelStats {
         AllScenesToRound.put("FallGuy_HoopsRevenge", "round_hoops_revenge_symphony_launch_show");
         AllScenesToRound.put("FallGuy_ShortCircuit2", "round_short_circuit_2_symphony_launch_show");
         AllScenesToRound.put("FallGuy_Gauntlet_09", "round_gauntlet_09");
-        AllScenesToRound.put("FallGuy_SpinRing", "round_spin_ring_symphony_launch_show");
+        AllScenesToRound.put("FallGuy_SpinRing", "round_spin_ring");
         AllScenesToRound.put("FallGuy_1v1_Volleyfall", "round_1v1_volleyfall_symphony_launch_show");
         AllScenesToRound.put("FallGuy_BlastBall_ArenaSurvival", "round_blastball_arenasurvival_symphony_launch_show");
         AllScenesToRound.put("FallGuy_HexARing", "round_hexaring");
