@@ -350,7 +350,7 @@ class LevelStats {
         ALLMAPS.put("round_gauntlet_04", new LevelStats("round_gauntlet_04", "Knight Fever", LevelType.Race, false, false, 2, 180, 120));
         ALLMAPS.put("round_drumtop", new LevelStats("round_drumtop", "Lily Leapers", LevelType.Race, false, false, 5, 300, 140));
         ALLMAPS.put("round_gauntlet_08", new LevelStats("round_gauntlet_08", "Party Promenade", LevelType.Race, false, false, 6, 300, 120));
-        ALLMAPS.put("round_pipedup_s6_launch", new LevelStats("round_pipedup_s6_launch", "Pipe Dream", LevelType.Race, false, false, 6, 300, 150));
+        ALLMAPS.put("round_pipedup", new LevelStats("round_pipedup", "Pipe Dream", LevelType.Race, false, false, 6, 300, 150));
         ALLMAPS.put("round_follow_the_line", new LevelStats("round_follow_the_line", "Puzzle Path", LevelType.Race, false, false, 9, 150, 150));
         ALLMAPS.put("round_tunnel_race", new LevelStats("round_tunnel_race", "Roll On", LevelType.Race, false, false, 4, 120, 120));
         ALLMAPS.put("round_see_saw", new LevelStats("round_see_saw", "See Saw", LevelType.Race, false, false, 1, 180, 120));
@@ -361,7 +361,7 @@ class LevelStats {
         ALLMAPS.put("round_gauntlet_10_almond", new LevelStats("round_gauntlet_10_almond", "Space Race", LevelType.Race, false, false, 8, 150, 150));
         ALLMAPS.put("round_short_circuit_2_symphony_launch_show", new LevelStats("round_short_circuit_2_symphony_launch_show", "Speed Circuit", LevelType.Race, false, false, 7, 180, 180));
         ALLMAPS.put("round_slide_chute", new LevelStats("round_slide_chute", "Speed Slider", LevelType.Race, false, false, 9, 165, 120));
-        ALLMAPS.put("round_starlink_almond", new LevelStats("round_starlink_almond", "Starchart", LevelType.Race, false, false, 8, 150, 150));
+        ALLMAPS.put("round_starlink", new LevelStats("round_starlink", "Starchart", LevelType.Race, false, false, 8, 150, 150));
         ALLMAPS.put("round_slimeclimb_2", new LevelStats("round_slimeclimb_2", "The Slimescraper", LevelType.Race, false, false, 4, 190, 190));
         ALLMAPS.put("round_gauntlet_03", new LevelStats("round_gauntlet_03", "The Whirlygig", LevelType.Race, false, false, 1, 180, 120));
         ALLMAPS.put("round_tip_toe", new LevelStats("round_tip_toe", "Tip Toe", LevelType.Race, false, false, 1, 300, 120));
@@ -378,7 +378,7 @@ class LevelStats {
         ALLMAPS.put("round_slippy_slide", new LevelStats("round_slippy_slide", "Hoop Chute", LevelType.Hunt, false, false, 9, 180, 180));
         ALLMAPS.put("round_hoops_blockade_solo", new LevelStats("round_hoops_blockade_solo", "Hoopsie Legends", LevelType.Hunt, false, false, 2, 300, 300));
         ALLMAPS.put("round_penguin_solos", new LevelStats("round_penguin_solos", "Pegwin Pool Party", LevelType.Hunt, false, false, 5, 300, 300));
-        ALLMAPS.put("round_follow-the-leader_s6_launch", new LevelStats("round_follow-the-leader_s6_launch", "Leading Light", LevelType.Hunt, false, false, 6, 300, 300));
+        ALLMAPS.put("round_follow-the-leader", new LevelStats("round_follow-the-leader", "Leading Light", LevelType.Hunt, false, false, 6, 300, 300));
         ALLMAPS.put("round_tail_tag", new LevelStats("round_tail_tag", "Tail Tag", LevelType.Hunt, false, false, 1, 90, 90));
         ALLMAPS.put("round_1v1_volleyfall_symphony_launch_show", new LevelStats("round_1v1_volleyfall_symphony_launch_show", "Volleyfall", LevelType.Hunt, false, false, 7, 100, 100));
         ALLMAPS.put("round_fruitpunch_s4_show", new LevelStats("round_fruitpunch_s4_show", "Big Shots", LevelType.Survival, false, false, 4, 90, 90));
@@ -483,9 +483,9 @@ class LevelStats {
         AllScenesToRound.put("FallGuy_Crown_Maze_Topdown", "round_crown_maze");
         AllScenesToRound.put("FallGuy_Airtime", "round_airtime");
         AllScenesToRound.put("FallGuy_SeeSaw360", "round_see_saw_360");
-        AllScenesToRound.put("FallGuy_FollowTheLeader", "round_follow-the-leader_s6_launch");
+        AllScenesToRound.put("FallGuy_FollowTheLeader", "round_follow-the-leader");
         AllScenesToRound.put("FallGuy_Gauntlet_08", "round_gauntlet_08");
-        AllScenesToRound.put("FallGuy_PipedUp", "round_pipedup_s6_launch");
+        AllScenesToRound.put("FallGuy_PipedUp", "round_pipedup");
         AllScenesToRound.put("FallGuy_Invisibeans", "round_invisibeans");
         AllScenesToRound.put("FallGuy_BlueJay", "round_bluejay");
         AllScenesToRound.put("FallGuy_HoopsRevenge", "round_hoops_revenge_symphony_launch_show");
@@ -500,7 +500,7 @@ class LevelStats {
         AllScenesToRound.put("FallGuy_Hoverboard_Survival_2", "round_hoverboardsurvival2_almond");
         AllScenesToRound.put("FallGuy_PixelPerfect", "round_pixelperfect_almond");
         AllScenesToRound.put("FallGuy_Gauntlet_10", "round_gauntlet_10_almond");
-        AllScenesToRound.put("FallGuy_Starlink", "round_starlink_almond");
+        AllScenesToRound.put("FallGuy_Starlink", "round_starlink");
         AllScenesToRound.put("FallGuy_HexSnake", "round_hexsnake");
         AllScenesToRound.put("FallGuy_Tip_Toe_Finale", "round_tiptoefinale_almond");
         AllScenesToRound.put("FallGuy_BlastBallRuins", "round_blastballruins");

@@ -14,6 +14,30 @@ TODO / CHANGES TO MAKE:
 == Clean up older game session files if they dont contain any matches / dont contain any rounds inside the matches folders
    this means those are just a waste of space and we can remove them so it doesnt bloat our logging folder.
 
+== Eventually find a way to determine if we should make a new game session or not and if something from the logs is going to help us do this
+    my idea right now is to check if the logs length is greater then a certain value such as 3000 for lines, as the base log file starts at about 3000 lines, if it is above this we can assume its the same game session
+    or instead of that we can check to see if the logs we are currently reading has existing round info in it from previous matches, which if it does when we start the app and the game has been loaded already
+    this can be assumed that we are still in the same current game session and not to create another new game session folder.
+
+ClientGameManager::HandleServerPlayerProgress PlayerId=36 is succeeded=False
+== we need to do the check above to make sure that if we are in squads and get elminiated on a round
+    we check for the statement above, and if we didnt suceeded and we left the match we can assume we are leaving because
+    we will not be qualifying for the next round
+    so even though we dont get "rewards"
+    we can still get our placement, round duration till we died, map name, and round number
+    and then handle the rest of the info we cant get back on the database as some special value like
+    -10, which means this is not something we retrieved for that match or round.
+
+
+== Need to implement a fix for cleaning up the folders when they are basically empty and not written with
+    information. In specific i mean the round files, we have to check over those to make sure they round info
+    is written inside and if not we delete it to keep it clean.
+    In specific this is mostly for when the program stops running mid match. If this is something that happens
+    then the round files may only be semi populated or we might have created the round file
+    and then it ends up being empty
+    we want to be sure that this is cleaned up, since when we send it to the database we dont want to send
+    empty round information as this can cause weird issues/false data for some places.
+    this is the last of my worries tho and i can implement it down the line as its a very niche scenario
 
 *TODO'S TASKS* FINISHED AND FIXES THAT WERE MADE:
 == Start working on making the round information in the text file parse the correct map from the log - relates to level stats.

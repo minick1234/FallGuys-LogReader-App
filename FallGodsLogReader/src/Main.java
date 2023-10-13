@@ -32,10 +32,47 @@ public class Main {
         boolean AddNewSession = true;
         File roundFile = null;
 
-
         boolean JustLaunchedFirstSkip = false;
         RandomAccessFile raf = null;
         boolean PrintedEndOfMatchInfo = false;
+
+        boolean playerQualifiedThisRound = false;
+        boolean checkForQualificationTextFound = false;
+
+        boolean HaveFinishedDoingThisOnce = false;
+
+        //Go over the default directory folder. Check to see if there is any GameSession folders. If there is we want to check inside those and check if there is matches folders.
+        //If there is matches folders, we want to check inside those and see if there is round files. If there is we leave it but if any of those conditions are false, then we must delete those files/folders, and remove the game session folder.
+        if (Files.isDirectory(DefaultDirectory.toPath())) {
+            if (Files.list(DefaultDirectory.toPath()).count() > 0) {
+                Stream<Path> gameSessionFolders = Files.list(DefaultDirectory.toPath());
+                gameSessionFolders.forEach(gameSession -> {
+                    try {
+                        // Check if there are any matches folders inside this game session
+                        try (Stream<Path> matchFolders = Files.list(gameSession)) {
+                            if (!matchFolders.anyMatch(Files::isDirectory)) {
+                                // No match folders found; delete the game session
+                                Files.walk(gameSession)
+                                        .sorted(Comparator.reverseOrder()) // Start deleting from leaf nodes
+                                        .forEach(path -> {
+                                            try {
+                                                System.out.println("i am deleting the old folder.");
+                                                Files.delete(path);
+                                            } catch (IOException e) {
+                                                throw new UncheckedIOException(e);
+                                            }
+                                        });
+                            }
+                        }
+                    } catch (IOException e) {
+                        System.out.println("There was an issue traversing the gamesessions/matches folder print the error: " + e.getMessage());
+                    }
+                });
+            }
+            HaveFinishedDoingThisOnce = true;
+        }
+
+        boolean MadeNewSession = false;
 
         while (true) {
 
@@ -52,10 +89,43 @@ public class Main {
 
             //Only continue checking this file if we are still playing fall guys.
             while (IsProcessStillRunning()) {
+                HaveFinishedDoingThisOnce = false;
+                //first go over the file and see if they played a match at any point inside it, if there is match info in the file already we can assume it was read already.
+                if (!MadeNewSession && SessionFolderDirectory == null) {
+                    String currLineFirstRead;
+                    while ((currLineFirstRead = raf.readLine()) != null) {
+                        if (currLineFirstRead.contains("[Hazel] [HazelNetworkTransport] Disconnect request received for connection 0. Reason: HazelNetworkTransport - Disconnect")
+                                || currLineFirstRead.contains("== [CompletedEpisodeDto] ==")
+                                || currLineFirstRead.contains("[StateGameLoading] Finished loading game level, assumed to be")
+                                || currLineFirstRead.contains("[StateConnectToGame] We're connected to the server!")) {
+                            System.out.println("We have found round / match info which means this session has already been happening so dont make a new one and just reuse this one.");
+                            if (Files.isDirectory(DefaultDirectory.toPath())) {
+                                try {
+                                    Stream<Path> GameSessionFolders = Files.list(DefaultDirectory.toPath());
+                                    Optional<Path> lastGameSessionFolder = GameSessionFolders.filter(Files::isDirectory).max(Comparator.naturalOrder());
+
+                                    if (lastGameSessionFolder.isPresent()) {
+                                        System.out.println("We have a old game session folder, we will now use that.");
+                                        SessionFolderDirectory = lastGameSessionFolder.get().toFile();
+                                    } else {
+                                        System.out.println("The old session might have been empty and deleted so create a new one.");
+                                        SessionFolderDirectory = CreateNewSessionFolder(DefaultDirectory, SessionFolderDirectory);
+                                    }
+                                } catch (IOException e) {
+                                    System.out.println("An error occured during the directory grabbing: " + e.getMessage());
+                                }
+                            }
+                            AddNewSession = false;
+                            break;
+                        }
+                    }
+                }
+
                 //Add a new session
                 if (AddNewSession) {
                     AddNewSession = false;
                     SessionFolderDirectory = CreateNewSessionFolder(DefaultDirectory, SessionFolderDirectory);
+                    MadeNewSession = true;
                 }
 
                 if (!JustLaunchedFirstSkip) {
@@ -70,10 +140,31 @@ public class Main {
                         //count up the line count for debugging purposes.
                         ++lineCount;
 
+                        if (currentLine.contains("ClientGameManager::HandleServerPlayerProgress PlayerId=" + currentPlayerID + " is succeeded=")) {
+                            checkForQualificationTextFound = true;
+                            //Parse this qualified round text line to get if we succeeded or not.
+                            playerQualifiedThisRound = Boolean.parseBoolean(currentLine.split("=")[2]);
+                            System.out.println("The player qualification status this round: " + playerQualifiedThisRound);
+                        }
+
                         if (currentLine.contains("[Hazel] [HazelNetworkTransport] Disconnect request received for connection 0. Reason: HazelNetworkTransport - Disconnect")) {
                             System.out.println("We have left the lobby.");
 
+                            //if we are here we can assume the player(s) didn't qualify for the next round and left early.
+                            if (!playerQualifiedThisRound && checkForQualificationTextFound && !PrintedEndOfMatchInfo) {
+                                System.out.println("Left early because we didn't qualify for the next round!");
+                                continue;
+                            }
+
                             long savedNormalPosition = raf.getFilePointer();
+
+                            if (PrintedEndOfMatchInfo) {
+                                try {
+                                    Thread.sleep(8500);
+                                } catch (InterruptedException e) {
+                                    System.out.println("There was an error on thread sleep: \n" + e.getMessage());
+                                }
+                            }
 
                             for (int i = 0; i < 10; i++) {
                                 String nextLine = raf.readLine();
@@ -83,14 +174,6 @@ public class Main {
                                     //If we are in the disconnect and we have finished the match and the info printed.
                                     //we want to sleep for 10 seconds to let the file update.
                                     //then we can read what it finds.
-                                    if (PrintedEndOfMatchInfo) {
-                                        try {
-                                            Thread.sleep(10000);
-
-                                        } catch (InterruptedException e) {
-                                            System.out.println("There was an error on thread sleep: \n" + e.getMessage());
-                                        }
-                                    }
 
                                     if (nextLine.contains("[StateWaitingForRewards] Init: waitingForRewards = ")) {
                                         System.out.println("We have found the rewards line.");
@@ -110,20 +193,21 @@ public class Main {
                                 DisconnectedPrematurely = false;
                                 //If we leave the match early we want to be sure to stop the current match check.
                                 matchStarted = false;
-
-                                if (Files.isDirectory(MatchFolderDirectory.toPath())) {
-                                    try (Stream<Path> files = Files.list(MatchFolderDirectory.toPath())) {
-                                        files.filter(Files::isRegularFile).forEach(file -> {
-                                            try {
-                                                Files.deleteIfExists(file);
-                                            } catch (IOException e) {
-                                                throw new UncheckedIOException(e);
-                                            }
-                                        });
+                                if (MatchFolderDirectory != null) {
+                                    if (Files.isDirectory(MatchFolderDirectory.toPath())) {
+                                        try (Stream<Path> files = Files.list(MatchFolderDirectory.toPath())) {
+                                            files.filter(Files::isRegularFile).forEach(file -> {
+                                                try {
+                                                    Files.deleteIfExists(file);
+                                                } catch (IOException e) {
+                                                    throw new UncheckedIOException(e);
+                                                }
+                                            });
+                                        }
                                     }
-                                }
 
-                                Files.deleteIfExists(MatchFolderDirectory.toPath());
+                                    Files.deleteIfExists(MatchFolderDirectory.toPath());
+                                }
 
                                 //Reset the round and match folder to null to allow for appropriate creation again.
                                 MatchFolderDirectory = null;
@@ -159,6 +243,8 @@ public class Main {
 
                         } else if (matchStarted) {
                             if (currentLine.contains("[StateGameLoading] Finished loading game level, assumed to be")) {
+                                playerQualifiedThisRound = false;
+                                checkForQualificationTextFound = false;
                                 roundFile = CreateNewRoundFile(MatchFolderDirectory);
                                 FileWriter writer = new FileWriter(roundFile);
                                 try {
@@ -192,6 +278,7 @@ public class Main {
                             if (LevelStats.ALLMAPS.get(roundLineInTwo[1].trim().substring(0, roundLineInTwo[1].length() - 2)) == null) {
                                 for (int i = 0; i < MapNameSplit.length; i++) {
                                     RealMapName += MapNameSplit[i];
+
                                     if (LevelStats.ALLMAPS.get(RealMapName) != null) {
                                         ValidMapALLMAPS = true;
                                         break;
@@ -208,8 +295,8 @@ public class Main {
                                     RealMapName = roundLineInTwo[1].trim().substring(0, roundLineInTwo[1].length() - 2);
                                 }
                             } else {
-                                System.out.println("i am in here.");
                                 RealMapName = roundLineInTwo[1].trim().substring(0, roundLineInTwo[1].length() - 2);
+                                ValidMapALLMAPS = true;
                             }
 
                             CurrRoundNumWriting = RoundNum;
@@ -235,6 +322,39 @@ public class Main {
                     lastKnownLength = raf.getFilePointer();
                 }
             }
+
+            //Go over the default directory folder. Check to see if there is any GameSession folders. If there is we want to check inside those and check if there is matches folders.
+            //If there is matches folders, we want to check inside those and see if there is round files. If there is we leave it but if any of those conditions are false, then we must delete those files/folders, and remove the game session folder.
+            if (Files.isDirectory(DefaultDirectory.toPath()) && HaveFinishedDoingThisOnce) {
+                if (Files.list(DefaultDirectory.toPath()).count() > 0) {
+                    Stream<Path> gameSessionFolders = Files.list(DefaultDirectory.toPath());
+                    gameSessionFolders.forEach(gameSession -> {
+                        try {
+                            // Check if there are any matches folders inside this game session
+                            try (Stream<Path> matchFolders = Files.list(gameSession)) {
+                                if (!matchFolders.anyMatch(Files::isDirectory)) {
+                                    // No match folders found; delete the game session
+                                    Files.walk(gameSession)
+                                            .sorted(Comparator.reverseOrder()) // Start deleting from leaf nodes
+                                            .forEach(path -> {
+                                                try {
+                                                    System.out.println("i am deleting the old folder.");
+                                                    Files.delete(path);
+                                                } catch (IOException e) {
+                                                    throw new UncheckedIOException(e);
+                                                }
+                                            });
+                                }
+                            }
+                        } catch (IOException e) {
+                            System.out.println("There was an issue traversing the gamesessions/matches folder print the error: " + e.getMessage());
+                        }
+                    });
+                }
+                HaveFinishedDoingThisOnce = true;
+            }
+
+
             //If the file has not updated or changed in any way we print out this info.
             //     PrintOutEndInfo();
 
