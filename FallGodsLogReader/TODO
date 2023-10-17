@@ -14,6 +14,23 @@ TODO / CHANGES TO MAKE:
 == Clean up older game session files if they dont contain any matches / dont contain any rounds inside the matches folders
    this means those are just a waste of space and we can remove them so it doesnt bloat our logging folder.
 
+
+== Fix game session folders to correctly renumber themselves when they are deleted or created from a new point for example if we have gamesession 2 empty, and gamesession 3 full,  we need to delete 2 and rename 3 to 2
+
+*TODO'S TASKS* FINISHED AND FIXES THAT WERE MADE:
+== Start working on making the round information in the text file parse the correct map from the log - relates to level stats.
+
+== Fix so that it deletes the appropriate match folder and its child files for round if we leave the game prematurely.
+
+== Fix premature check to make sure that it isnt true when we finish the game all the way but don't win - for some reason the log file takes a while to print while its doing its ending animation and this causes the check i have to return null for a while
+    to get around this i am now doing something where if the end of game round info is printed we can assume we made it through the whole match and then check with a boolean to not print if the match as printed end of match info.
+
+== Fix issue where some maps are not recognized by our level stat hash map because of changes fall guys made to the logs, so we need to correct for those changes and mistakes so they can be loaded normally and recognized correctly
+
+== Have a fix for if the map doesnt exist we just avoid printing it out so that we avoid sending false data to the server when we don't know the map name either because of a new update or changes to the logs.
+
+*TODO'S TASKS* FINISHED AND FIXES THAT WERE MADE BUT THAT MIGHT STILL NEED REVISION IN THE FUTURE:
+
 == Eventually find a way to determine if we should make a new game session or not and if something from the logs is going to help us do this
     my idea right now is to check if the logs length is greater then a certain value such as 3000 for lines, as the base log file starts at about 3000 lines, if it is above this we can assume its the same game session
     or instead of that we can check to see if the logs we are currently reading has existing round info in it from previous matches, which if it does when we start the app and the game has been loaded already
@@ -28,7 +45,6 @@ ClientGameManager::HandleServerPlayerProgress PlayerId=36 is succeeded=False
     and then handle the rest of the info we cant get back on the database as some special value like
     -10, which means this is not something we retrieved for that match or round.
 
-
 == Need to implement a fix for cleaning up the folders when they are basically empty and not written with
     information. In specific i mean the round files, we have to check over those to make sure they round info
     is written inside and if not we delete it to keep it clean.
@@ -38,15 +54,3 @@ ClientGameManager::HandleServerPlayerProgress PlayerId=36 is succeeded=False
     we want to be sure that this is cleaned up, since when we send it to the database we dont want to send
     empty round information as this can cause weird issues/false data for some places.
     this is the last of my worries tho and i can implement it down the line as its a very niche scenario
-
-*TODO'S TASKS* FINISHED AND FIXES THAT WERE MADE:
-== Start working on making the round information in the text file parse the correct map from the log - relates to level stats.
-
-== Fix so that it deletes the appropriate match folder and its child files for round if we leave the game prematurely.
-
-== Fix premature check to make sure that it isnt true when we finish the game all the way but don't win - for some reason the log file takes a while to print while its doing its ending animation and this causes the check i have to return null for a while
-    to get around this i am now doing something where if the end of game round info is printed we can assume we made it through the whole match and then check with a boolean to not print if the match as printed end of match info.
-
-== Fix issue where some maps are not recognized by our level stat hash map because of changes fall guys made to the logs, so we need to correct for those changes and mistakes so they can be loaded normally and recognized correctly
-
-== Have a fix for if the map doesnt exist we just avoid printing it out so that we avoid sending false data to the server when we don't know the map name either because of a new update or changes to the logs.

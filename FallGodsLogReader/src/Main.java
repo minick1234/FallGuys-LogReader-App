@@ -39,7 +39,6 @@ public class Main {
         boolean playerQualifiedThisRound = false;
         boolean checkForQualificationTextFound = false;
 
-        boolean HaveFinishedDoingThisOnce = false;
 
         //Go over the default directory folder. Check to see if there is any GameSession folders. If there is we want to check inside those and check if there is matches folders.
         //If there is matches folders, we want to check inside those and see if there is round files. If there is we leave it but if any of those conditions are false, then we must delete those files/folders, and remove the game session folder.
@@ -69,7 +68,6 @@ public class Main {
                     }
                 });
             }
-            HaveFinishedDoingThisOnce = true;
         }
 
         boolean MadeNewSession = false;
@@ -89,7 +87,6 @@ public class Main {
 
             //Only continue checking this file if we are still playing fall guys.
             while (IsProcessStillRunning()) {
-                HaveFinishedDoingThisOnce = false;
                 //first go over the file and see if they played a match at any point inside it, if there is match info in the file already we can assume it was read already.
                 if (!MadeNewSession && SessionFolderDirectory == null) {
                     String currLineFirstRead;
@@ -160,7 +157,7 @@ public class Main {
 
                             if (PrintedEndOfMatchInfo) {
                                 try {
-                                    Thread.sleep(8500);
+                                    Thread.sleep(7500);
                                 } catch (InterruptedException e) {
                                     System.out.println("There was an error on thread sleep: \n" + e.getMessage());
                                 }
@@ -323,9 +320,10 @@ public class Main {
                 }
             }
 
+
             //Go over the default directory folder. Check to see if there is any GameSession folders. If there is we want to check inside those and check if there is matches folders.
             //If there is matches folders, we want to check inside those and see if there is round files. If there is we leave it but if any of those conditions are false, then we must delete those files/folders, and remove the game session folder.
-            if (Files.isDirectory(DefaultDirectory.toPath()) && HaveFinishedDoingThisOnce) {
+            if (Files.isDirectory(DefaultDirectory.toPath())) {
                 if (Files.list(DefaultDirectory.toPath()).count() > 0) {
                     Stream<Path> gameSessionFolders = Files.list(DefaultDirectory.toPath());
                     gameSessionFolders.forEach(gameSession -> {
@@ -351,7 +349,6 @@ public class Main {
                         }
                     });
                 }
-                HaveFinishedDoingThisOnce = true;
             }
 
 
