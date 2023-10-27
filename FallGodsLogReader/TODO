@@ -1,23 +1,25 @@
 TODO / CHANGES TO MAKE:
-== Find a way to also aggregate all the files for rounds into one at the end of the match
-
-== Find a way to go over every single round after a match and add the missing info i cannot get at real time.
-
-== Start printing the info to the round files
-
-== Start refactoring everything to the correct classes so that round objects are made when new rounds are created.
 
 == Lots of refactoring needs to be done for simplicity sake.
-
-== Start printing the correct player id each game for the player and start retrieving the real time data for duration of round, player id, placement, map id. - the rest of it all can only be retrieved end of match unfortunately.
 
 == Clean up older game session files if they dont contain any matches / dont contain any rounds inside the matches folders
    this means those are just a waste of space and we can remove them so it doesnt bloat our logging folder.
 
+== Need to distinguish another weird case scenario, where if the program crashes or they stop the program mid match, what are we doing with the older match files. We either have to delete the older folder or somehow check over it and see if it has info or is a completed match
+   and with this we determine if we need to delete it or not. - this is kind of a complex thing to do right now and implement and is very specific in its case so i will leave it as is right now until it becomes a issue lol.
 
+(This is a really weird bug that rarely happens.)
 == Fix game session folders to correctly renumber themselves when they are deleted or created from a new point for example if we have gamesession 2 empty, and gamesession 3 full,  we need to delete 2 and rename 3 to 2
 
 *TODO'S TASKS* FINISHED AND FIXES THAT WERE MADE:
+== Find a way to go over every single round after a match and add the missing info i cannot get at real time.
+
+== Start printing the correct player id each game for the player and start retrieving the real time data for duration of round, player id, placement, map id. - the rest of it all can only be retrieved end of match unfortunately.
+
+== Start printing the info to the round files
+
+== Find a way to also aggregate all the files for rounds into one at the end of the match
+
 == Start working on making the round information in the text file parse the correct map from the log - relates to level stats.
 
 == Fix so that it deletes the appropriate match folder and its child files for round if we leave the game prematurely.

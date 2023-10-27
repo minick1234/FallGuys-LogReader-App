@@ -15,8 +15,6 @@ class LevelStats {
     int timeLimitInSecondsForSquad;
     int season;
 
-    ArrayList<Round> stats;
-
     LevelType type;
 
     public LevelStats(String levelId, String levelName, LevelType type, boolean isCreative, boolean isFinal, int season, int timeLimitInSeconds, int timeLimitInSecondsForSquad) {
@@ -28,7 +26,6 @@ class LevelStats {
         this.isFinal = isFinal;
         this.timeLimitInSeconds = timeLimitInSeconds;
         this.timeLimitInSecondsForSquad = timeLimitInSecondsForSquad;
-        this.stats = new ArrayList<Round>();
     }
 
     public static Map<String, LevelStats> ALLMAPS = new HashMap<>();
