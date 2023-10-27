@@ -42,15 +42,12 @@ public class Main {
 
         DeleteOldOrInvalidGameSessionFolders(DefaultDirectory);
 
-        //Two fixes to be made.
-        //First i need to fix that when you are disqualified, we stop making new round files and make sure it doesn't allow us to make any others until we go back to the main menu.
-        //Second we need to fix so that it doesnt print out the qualified true or false and position again at the end of the mmatch because we do this in real time.
-        //Thirdly we need to make sure that we fix the issue that if we didn't qualify that the player qualfiication number is like -1 or 0 to make sure it can really know when we qualified vs when we were eliminated. - then we can handle that -1 or 0 value in the backend.
+        //EH- we will see - Thirdly we need to make sure that we fix the issue that if we didn't qualify that the player qualfiication number is like -1 or 0 to make sure it can really know when we qualified vs when we were eliminated. - then we can handle that -1 or 0 value in the backend.
         //We need to work on refactoring some code, and making some things into functions to shorten everything, and finally clean up some other parts.
-        //All in all it is basically finished and works very well in a bit of a spaghetti mess right now.
         //Final and last but not least thing is fixing and working on the duration so it appropriately shows how long a round took to finish.
-
         //Figure out if there is a way to know if a map is a survival or not because the position aspect of the log doesnt really make sense for that type of map. So as of right now i dont know how to handle it
+        //Last but not least to fix is to know when we have won the whole game or not - im assuming if i stay till the end of the match i can use the "crowns" info which if its 1, i assume i won , and if its 0 we lost.
+        
         boolean MadeNewSession = false;
 
         while (true) {
@@ -281,7 +278,7 @@ public class Main {
 
                                 boolean ValidMapALLMAPS = false;
 
-                                if (LevelStats.ALLMAPS.get(MapNameFromLog.trim().substring(0, MapNameFromLog.length() - 3)) == null) {
+                                if (LevelStats.ALLMAPS.get(tempMapNameFromLog) == null) {
                                     for (int i = 0; i < MapNameSplit.length; i++) {
                                         RealMapName += MapNameSplit[i];
 
@@ -298,14 +295,14 @@ public class Main {
 
                                     }
                                     if (!ValidMapALLMAPS) {
-                                        RealMapName = MapNameFromLog.trim().substring(0, MapNameFromLog.length() - 3);
+                                        RealMapName = tempMapNameFromLog;
                                     }
                                 } else {
-                                    RealMapName = MapNameFromLog.trim().substring(0, MapNameFromLog.length() - 3);
+                                    RealMapName = tempMapNameFromLog;
                                     ValidMapALLMAPS = true;
                                 }
 
-                                System.out.println("Map name from log is: " + MapNameFromLog);
+                                System.out.println("Map name from log is: " + tempMapNameFromLog);
 
                                 try {
                                     FileWriter writer = new FileWriter(roundFile, true);
@@ -333,6 +330,10 @@ public class Main {
                         }
 
                         if (currentLine.contains("[Round")) {
+
+                            playerQualifiedThisRound = false;
+                            MakeRoundFiles = false;
+
                             PrintedEndOfMatchInfo = true;
                             String[] roundLineInTwo = currentLine.split("\\|");
                             int RoundNum = Integer.parseInt(roundLineInTwo[0].split(" ")[1].trim());
@@ -494,11 +495,15 @@ public class Main {
         try {
             FileWriter writer = new FileWriter(currentRoundFile, true);
             try {
-                if ((positionFound && qualifiedFound) && currentLine.contains("Position:") || currentLine.contains("Qualified:")) {
+                if ((positionFound && qualifiedFound) && (currentLine.contains("Position:") || currentLine.contains("Qualified:"))) {
                     return;
                 }
 
-                writer.write(currentLine + "\n");
+                if (currentLine.length() > 0) {
+                    writer.write(currentLine.substring(2, currentLine.length()) + "\n");
+                } else {
+                    writer.write(currentLine + "\n");
+                }
             } catch (IOException e) {
                 System.out.println("An error occurred writing to the file");
             }
