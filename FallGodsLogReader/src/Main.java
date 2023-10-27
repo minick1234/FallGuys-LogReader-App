@@ -9,51 +9,23 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class Main {
-    private static int currentPlayerID = -1, currentPartyID = -1, gamesPlayed = 0, numberOfSessions = 0, numberOfMatches = 0, numberOfRounds = 0;
-    private static String pathToPlayerLog;
-    private static ArrayList<String> MapPlayedSoFarInOrder = new ArrayList<String>();
-    private static long lastKnownLength = 0, lineCount = 0;
-
-    private static int CurrRoundNumWriting = 0;
+    private static int currentPlayerID = -1, numberOfSessions = 0, numberOfMatches = 0, numberOfRounds = 0, roundInfoCounter = 10, PlayerPositionInThisRound = 1;
+    private static String pathToPlayerLog, currentLine;
+    private static long lastKnownLength = 0;
+    private static boolean printRoundInfo = false, AddNewSession = true, JustLaunchedFirstSkip = false, PrintedEndOfMatchInfo = false, playerQualifiedThisRound = false, checkForQualificationTextFound = false, MadeNewSession = false;
+    private static File roundFile = null, SessionFolderDirectory = null, MatchFolderDirectory = null;
+    private static RandomAccessFile raf = null;
 
     public static void main(String[] args) throws IOException {
 
-        //The current line we are reading from the file.
-        String currentLine;
-
-        //when round is found - read the next 19 lines and associate that with round information.
-        int roundInfoCounter = 10;
-
-        boolean printRoundInfo = false;
-
         File DefaultDirectory = CheckForDefaultLogsStorageFolder();
-
-        boolean AddNewSession = true;
-        File roundFile = null;
-
-        boolean JustLaunchedFirstSkip = false;
-        RandomAccessFile raf = null;
-        boolean PrintedEndOfMatchInfo = false;
-
-        boolean playerQualifiedThisRound = false;
-        boolean checkForQualificationTextFound = false;
-
-        int PlayerPositionInThisRound = 1;
 
         DeleteOldOrInvalidGameSessionFolders(DefaultDirectory);
 
-        //EH- we will see - Thirdly we need to make sure that we fix the issue that if we didn't qualify that the player qualfiication number is like -1 or 0 to make sure it can really know when we qualified vs when we were eliminated. - then we can handle that -1 or 0 value in the backend.
-        //We need to work on refactoring some code, and making some things into functions to shorten everything, and finally clean up some other parts.
-        //Final and last but not least thing is fixing and working on the duration so it appropriately shows how long a round took to finish.
-        //Figure out if there is a way to know if a map is a survival or not because the position aspect of the log doesnt really make sense for that type of map. So as of right now i dont know how to handle it
-        //Last but not least to fix is to know when we have won the whole game or not - im assuming if i stay till the end of the match i can use the "crowns" info which if its 1, i assume i won , and if its 0 we lost.
-        
-        boolean MadeNewSession = false;
-
         while (true) {
 
-            File SessionFolderDirectory = null;
-            File MatchFolderDirectory = null;
+            SessionFolderDirectory = null;
+            MatchFolderDirectory = null;
             File AfterMatchEndRoundFileToWriteTo = null;
             boolean MakeRoundFiles = true;
             boolean matchStarted = false;
@@ -65,42 +37,10 @@ public class Main {
                 raf = new RandomAccessFile(pathToPlayerLog, "r");
             }
 
-            //Only continue checking this file if we are still playing fall guys.
             while (IsProcessStillRunning()) {
 
+                CheckForValidOldSessionFolder(DefaultDirectory, SessionFolderDirectory);
 
-                //first go over the file and see if they played a match at any point inside it, if there is match info in the file already we can assume it was read already.
-                if (!MadeNewSession && SessionFolderDirectory == null) {
-                    String currLineFirstRead;
-                    while ((currLineFirstRead = raf.readLine()) != null) {
-                        if (currLineFirstRead.contains("[Hazel] [HazelNetworkTransport] Disconnect request received for connection 0. Reason: HazelNetworkTransport - Disconnect")
-                                || currLineFirstRead.contains("== [CompletedEpisodeDto] ==")
-                                || currLineFirstRead.contains("[StateGameLoading] Finished loading game level, assumed to be")
-                                || currLineFirstRead.contains("[StateConnectToGame] We're connected to the server!")) {
-                            System.out.println("We have found round / match info which means this session has already been happening so dont make a new one and just reuse this one.");
-                            if (Files.isDirectory(DefaultDirectory.toPath())) {
-                                try {
-                                    Stream<Path> GameSessionFolders = Files.list(DefaultDirectory.toPath());
-                                    Optional<Path> lastGameSessionFolder = GameSessionFolders.filter(Files::isDirectory).max(Comparator.naturalOrder());
-
-                                    if (lastGameSessionFolder.isPresent()) {
-                                        System.out.println("We have a old game session folder, we will now use that.");
-                                        SessionFolderDirectory = lastGameSessionFolder.get().toFile();
-                                    } else {
-                                        System.out.println("The old session might have been empty and deleted so create a new one.");
-                                        SessionFolderDirectory = CreateNewSessionFolder(DefaultDirectory, SessionFolderDirectory);
-                                    }
-                                } catch (IOException e) {
-                                    System.out.println("An error occured during the directory grabbing: " + e.getMessage());
-                                }
-                            }
-                            AddNewSession = false;
-                            break;
-                        }
-                    }
-                }
-
-                //Add a new session
                 if (AddNewSession) {
                     AddNewSession = false;
                     SessionFolderDirectory = CreateNewSessionFolder(DefaultDirectory, SessionFolderDirectory);
@@ -116,47 +56,24 @@ public class Main {
                 if (raf.length() > lastKnownLength) {
                     raf.seek(lastKnownLength);
                     while ((currentLine = raf.readLine()) != null) {
-                        //count up the line count for debugging purposes.
-                        ++lineCount;
-
-                        //Final two things to check for is when state of the game changes from countdown to play - and grab that time.
-                        //also when the player suceedes below we write to the file if they suceeded or not and grab that time as well and do a comparison so we can print the duration
 
                         if (currentLine.contains("ClientGameManager::HandleServerPlayerProgress PlayerId=")) {
                             String CurrLinePlayerId = "";
-                            // Define a regular expression pattern to match PlayerId=value
                             Pattern pattern = Pattern.compile("PlayerId=(\\d+)");
                             Matcher matcher = pattern.matcher(currentLine);
 
                             if (matcher.find()) {
-                                // Extract the matched PlayerId value
                                 CurrLinePlayerId = matcher.group(1);
                             }
 
                             if (Integer.parseInt(CurrLinePlayerId) == currentPlayerID) {
+
                                 checkForQualificationTextFound = true;
-                                //Parse this qualified round text line to get if we succeeded or not.
                                 playerQualifiedThisRound = Boolean.parseBoolean(currentLine.split("=")[2]);
-                                System.out.println("The player qualification status this round: " + playerQualifiedThisRound);
 
-                                try {
-                                    FileWriter writer = new FileWriter(roundFile, true);
-                                    try {
-                                        writer.write("Qualified: " + playerQualifiedThisRound + "\n");
-                                        if (!playerQualifiedThisRound) {
-                                            writer.write("Position: " + "0" + "\n");
-                                            MakeRoundFiles = false;
-                                        } else {
-                                            writer.write("Position: " + PlayerPositionInThisRound + "\n");
-                                        }
+                                WriteToFile(roundFile, "Qualified: " + playerQualifiedThisRound);
+                                WriteToFile(roundFile, "Position: " + PlayerPositionInThisRound);
 
-                                    } catch (IOException e) {
-                                        System.out.println("An error occured writing to the file");
-                                    }
-                                    writer.close();
-                                } catch (IOException e) {
-                                    System.out.println("an error occured closing the writer.");
-                                }
                             } else if (Integer.parseInt(CurrLinePlayerId) != currentPlayerID && Boolean.parseBoolean(currentLine.split("=")[2])) {
                                 PlayerPositionInThisRound++;
                             }
@@ -166,7 +83,7 @@ public class Main {
                             System.out.println("We have left the lobby.");
 
                             //if we are here we can assume the player(s) didn't qualify for the next round and left early.
-                            if (!playerQualifiedThisRound && checkForQualificationTextFound && !PrintedEndOfMatchInfo) {
+                            if ((!playerQualifiedThisRound && checkForQualificationTextFound && !PrintedEndOfMatchInfo) || !MakeRoundFiles) {
                                 System.out.println("Left early because we didn't qualify for the next round!");
                                 continue;
                             }
@@ -174,21 +91,13 @@ public class Main {
                             long savedNormalPosition = raf.getFilePointer();
 
                             if (PrintedEndOfMatchInfo) {
-                                try {
-                                    Thread.sleep(7500);
-                                } catch (InterruptedException e) {
-                                    System.out.println("There was an error on thread sleep: \n" + e.getMessage());
-                                }
+                                PerformThreadSleep(7500);
                             }
 
                             for (int i = 0; i < 10; i++) {
                                 String nextLine = raf.readLine();
                                 if (nextLine != null) {
                                     System.out.println("Checking for reward line...");
-
-                                    //If we are in the disconnect and we have finished the match and the info printed.
-                                    //we want to sleep for 10 seconds to let the file update.
-                                    //then we can read what it finds.
 
                                     if (nextLine.contains("[StateWaitingForRewards] Init: waitingForRewards = ")) {
                                         System.out.println("We have found the rewards line.");
@@ -220,7 +129,6 @@ public class Main {
                                             });
                                         }
                                     }
-
                                     Files.deleteIfExists(MatchFolderDirectory.toPath());
                                 }
 
@@ -256,6 +164,7 @@ public class Main {
                                 checkForQualificationTextFound = false;
                                 roundFile = CreateNewRoundFile(MatchFolderDirectory);
                                 PlayerPositionInThisRound = 1;
+
                                 // Define a regular expression pattern to match the desired text
                                 Pattern pattern = Pattern.compile("assumed to be (\\S+)");
                                 Matcher matcher = pattern.matcher(currentLine);
@@ -263,11 +172,8 @@ public class Main {
                                 String MapNameFromLog = "";
 
                                 if (matcher.find()) {
-                                    // Extract the matched part
                                     MapNameFromLog = matcher.group(1);
-                                    System.out.println("Extracted: " + MapNameFromLog);
                                 } else {
-                                    System.out.println("Pattern not found in the log entry.");
                                     MapNameFromLog = "a non existant map";
                                 }
 
@@ -304,33 +210,16 @@ public class Main {
 
                                 System.out.println("Map name from log is: " + tempMapNameFromLog);
 
-                                try {
-                                    FileWriter writer = new FileWriter(roundFile, true);
-                                    try {
-                                        if (ValidMapALLMAPS) {
-                                            System.out.println("Map name converted to correct value: " + LevelStats.ALLMAPS.get(RealMapName).name);
-                                            writer.write("Map Name: " + LevelStats.ALLMAPS.get(RealMapName).name + "\n");
-
-                                        } else {
-                                            writer.write("Map Name: " + RealMapName + "\n");
-                                            System.out.println("Unfortunately this is not a valid map. That can be converted");
-                                        }
-
-                                    } catch (IOException e) {
-                                        System.out.println("An error occured writing to the file");
-                                    }
-                                    writer.close();
-                                } catch (IOException e) {
-                                    System.out.println("an error occured closing the writer.");
+                                if (ValidMapALLMAPS) {
+                                    WriteToFile(roundFile, "Map Name: " + LevelStats.ALLMAPS.get(RealMapName).name);
+                                } else {
+                                    WriteToFile(roundFile, "Map Name: " + RealMapName);
+                                    System.out.println("Unfortunately this is not a valid map. That can be converted");
                                 }
                             }
                         }
-                        if (currentLine.contains("== [CompletedEpisodeDto] ==")) {
-                            gamesPlayed++;
-                        }
 
                         if (currentLine.contains("[Round")) {
-
                             playerQualifiedThisRound = false;
                             MakeRoundFiles = false;
 
@@ -351,7 +240,6 @@ public class Main {
                                             AfterMatchEndRoundFileToWriteTo = matchRoundFile;
                                             System.out.println("Found the valid round number for this info in the match folder - using it for writing info.");
                                         }
-
                                     }
                                 }
                             }
@@ -384,11 +272,29 @@ public class Main {
             AddNewSession = true;
 
             //Let this loop sleep for 2 seconds before rechecking if the process is open.
+            PerformThreadSleep(2000);
+        }
+    }
+
+    public static void WriteToFile(File fileToWriteTo, String informationToWrite) {
+        try {
+            FileWriter writer = new FileWriter(fileToWriteTo, true);
             try {
-                Thread.sleep(2000);
-            } catch (IllegalArgumentException | InterruptedException e) {
-                System.out.println(e.getMessage());
+                writer.write(informationToWrite + "\n");
+            } catch (IOException e) {
+                System.out.println("An error occured writing to the file");
             }
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("an error occured closing the writer.");
+        }
+    }
+
+    public static void PerformThreadSleep(long sleepTimeInMilliseconds) {
+        try {
+            Thread.sleep(sleepTimeInMilliseconds);
+        } catch (IllegalArgumentException | InterruptedException e) {
+            System.out.println(e.getMessage());
         }
     }
 
@@ -435,7 +341,6 @@ public class Main {
         }
     }
 
-    //Checks for if the process is running, this determines if we should continue checking the file for updates.
     public static boolean IsProcessStillRunning() {
 
         String processName = "FallGuys_client_game.exe";
@@ -469,21 +374,30 @@ public class Main {
         return false;
     }
 
-    //Reads the current lines round info and assigns it to the values for the correct object.
     public static void ReadEndOfMatchRoundInfo(String currentLine, File currentRoundFile) {
         System.out.println(currentLine);
 
-        boolean qualifiedFound = false;
-        boolean positionFound = false;
+        boolean qualifiedFound = ReadRoundFileFor_QualificationOrPosition(currentRoundFile, "Qualified:");
+        boolean positionFound = ReadRoundFileFor_QualificationOrPosition(currentRoundFile, "Position:");
 
+        if ((positionFound && qualifiedFound) && (currentLine.contains("Position:") || currentLine.contains("Qualified:"))) {
+            return;
+        }
+
+        if (currentLine.length() > 0) {
+            WriteToFile(currentRoundFile, currentLine.substring(2, currentLine.length()));
+        } else {
+            WriteToFile(currentRoundFile, currentLine);
+        }
+    }
+
+    public static boolean ReadRoundFileFor_QualificationOrPosition(File currentRoundFile, String qualifiedOrPosition) {
         try {
             BufferedReader roundFileReader = new BufferedReader(new FileReader(currentRoundFile));
             String currRoundFileLine;
             while ((currRoundFileLine = roundFileReader.readLine()) != null) {
-                if (currRoundFileLine.contains("Qualified:")) {
-                    qualifiedFound = true;
-                } else if (currRoundFileLine.contains("Position:")) {
-                    positionFound = true;
+                if (currRoundFileLine.contains(qualifiedOrPosition)) {
+                    return true;
                 }
             }
         } catch (FileNotFoundException ex) {
@@ -491,29 +405,9 @@ public class Main {
         } catch (IOException ex) {
             System.out.println("The file is not able to be read correctly.");
         }
-
-        try {
-            FileWriter writer = new FileWriter(currentRoundFile, true);
-            try {
-                if ((positionFound && qualifiedFound) && (currentLine.contains("Position:") || currentLine.contains("Qualified:"))) {
-                    return;
-                }
-
-                if (currentLine.length() > 0) {
-                    writer.write(currentLine.substring(2, currentLine.length()) + "\n");
-                } else {
-                    writer.write(currentLine + "\n");
-                }
-            } catch (IOException e) {
-                System.out.println("An error occurred writing to the file");
-            }
-            writer.close();
-        } catch (IOException e) {
-            System.out.println("an error occurred closing the writer.");
-        }
+        return false;
     }
 
-    //This returns the new player id and is only called if player id has changed in the logs.
     public static long UpdatePlayerID(String currentLine) {
 
         String[] splitParts = currentLine.split("player ID =");
@@ -606,6 +500,43 @@ public class Main {
             DefaultDirectory.mkdir();
         }
         return DefaultDirectory;
+    }
+
+    public static void CheckForValidOldSessionFolder(File DefaultDirectory, File SessionFolderDirectory) {
+        //first go over the file and see if they played a match at any point inside it, if there is match info in the file already we can assume it was read already.
+        if (!MadeNewSession && SessionFolderDirectory == null) {
+            String currLineFirstRead;
+            try {
+                while ((currLineFirstRead = raf.readLine()) != null) {
+                    if (currLineFirstRead.contains("[Hazel] [HazelNetworkTransport] Disconnect request received for connection 0. Reason: HazelNetworkTransport - Disconnect")
+                            || currLineFirstRead.contains("== [CompletedEpisodeDto] ==")
+                            || currLineFirstRead.contains("[StateGameLoading] Finished loading game level, assumed to be")
+                            || currLineFirstRead.contains("[StateConnectToGame] We're connected to the server!")) {
+                        System.out.println("We have found round / match info which means this session has already been happening so dont make a new one and just reuse this one.");
+                        if (Files.isDirectory(DefaultDirectory.toPath())) {
+                            try {
+                                Stream<Path> GameSessionFolders = Files.list(DefaultDirectory.toPath());
+                                Optional<Path> lastGameSessionFolder = GameSessionFolders.filter(Files::isDirectory).max(Comparator.naturalOrder());
+
+                                if (lastGameSessionFolder.isPresent()) {
+                                    System.out.println("We have a old game session folder, we will now use that.");
+                                    SessionFolderDirectory = lastGameSessionFolder.get().toFile();
+                                } else {
+                                    System.out.println("The old session might have been empty and deleted so create a new one.");
+                                    SessionFolderDirectory = CreateNewSessionFolder(DefaultDirectory, SessionFolderDirectory);
+                                }
+                            } catch (IOException e) {
+                                System.out.println("An error occured during the directory grabbing: " + e.getMessage());
+                            }
+                        }
+                        AddNewSession = false;
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("We caught a error while reading the player log.");
+            }
+        }
     }
 
 }

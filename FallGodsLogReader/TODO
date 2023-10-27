@@ -11,6 +11,13 @@ TODO / CHANGES TO MAKE:
 (This is a really weird bug that rarely happens.)
 == Fix game session folders to correctly renumber themselves when they are deleted or created from a new point for example if we have gamesession 2 empty, and gamesession 3 full,  we need to delete 2 and rename 3 to 2
 
+        //EH- we will see - Thirdly we need to make sure that we fix the issue that if we didn't qualify that the player qualfiication number is like -1 or 0 to make sure it can really know when we qualified vs when we were eliminated. - then we can handle that -1 or 0 value in the backend.
+        //We need to work on refactoring some code, and making some things into functions to shorten everything, and finally clean up some other parts.
+        //Final and last but not least thing is fixing and working on the duration so it appropriately shows how long a round took to finish.
+        //Figure out if there is a way to know if a map is a survival or not because the position aspect of the log doesnt really make sense for that type of map. So as of right now i dont know how to handle it
+        //Last but not least to fix is to know when we have won the whole game or not - im assuming if i stay till the end of the match i can use the "crowns" info which if its 1, i assume i won , and if its 0 we lost.
+
+
 *TODO'S TASKS* FINISHED AND FIXES THAT WERE MADE:
 == Find a way to go over every single round after a match and add the missing info i cannot get at real time.
 
