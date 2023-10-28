@@ -18,6 +18,14 @@ TODO / CHANGES TO MAKE:
         //Last but not least to fix is to know when we have won the whole game or not - im assuming if i stay till the end of the match i can use the "crowns" info which if its 1, i assume i won , and if its 0 we lost.
 
 
+Do some more testing tomorrow - two weird issues have showed up
+1.when the game has a mattch inside of the session folder for some reason now the file doesnt recreate itself as fast, so the old session match folder is recognized because its reading the player log, we need to solve this. - think i fixed this, need more testing
+2. when the player playys a round now and leaves the game prematurely there is a issue where its not recognizing and deleting the folder correctly this needs to be addressed. - weird this seems to not always happen?? im so confused need to do more testing. - think i fixed this?? maybe
+-- need more testing, 2 seems to be a very specific scenario it happens for but im to tired tonight to solve it.
+
+
+
+
 *TODO'S TASKS* FINISHED AND FIXES THAT WERE MADE:
 == Find a way to go over every single round after a match and add the missing info i cannot get at real time.
 

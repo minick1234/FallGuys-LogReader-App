@@ -3,7 +3,6 @@ import java.util.*;
 import java.lang.SecurityException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -37,9 +36,14 @@ public class Main {
                 raf = new RandomAccessFile(pathToPlayerLog, "r");
             }
 
+            if (IsProcessStillRunning() && JustLaunchedFirstSkip) {
+                JustLaunchedFirstSkip = false;
+                PerformThreadSleep(2000);
+            }
+
             while (IsProcessStillRunning()) {
 
-                CheckForValidOldSessionFolder(DefaultDirectory, SessionFolderDirectory);
+                CheckForValidOldSessionFolder(DefaultDirectory);
 
                 if (AddNewSession) {
                     AddNewSession = false;
@@ -71,8 +75,15 @@ public class Main {
                                 checkForQualificationTextFound = true;
                                 playerQualifiedThisRound = Boolean.parseBoolean(currentLine.split("=")[2]);
 
+                                System.out.println("I am in here so im going to print this");
                                 WriteToFile(roundFile, "Qualified: " + playerQualifiedThisRound);
-                                WriteToFile(roundFile, "Position: " + PlayerPositionInThisRound);
+
+                                if (!playerQualifiedThisRound) {
+                                    WriteToFile(roundFile, "Position: " + -1);
+
+                                } else {
+                                    WriteToFile(roundFile, "Position: " + PlayerPositionInThisRound);
+                                }
 
                             } else if (Integer.parseInt(CurrLinePlayerId) != currentPlayerID && Boolean.parseBoolean(currentLine.split("=")[2])) {
                                 PlayerPositionInThisRound++;
@@ -84,7 +95,7 @@ public class Main {
 
                             //if we are here we can assume the player(s) didn't qualify for the next round and left early.
                             if ((!playerQualifiedThisRound && checkForQualificationTextFound && !PrintedEndOfMatchInfo) || !MakeRoundFiles) {
-                                System.out.println("Left early because we didn't qualify for the next round!");
+                                System.out.println("Left because we didn't qualify for the next round!");
                                 continue;
                             }
 
@@ -111,8 +122,9 @@ public class Main {
                                 }
                             }
 
+                            System.out.println("Printed end of match info variable " + PrintedEndOfMatchInfo);
+
                             if (DisconnectedPrematurely && !PrintedEndOfMatchInfo) {
-                                System.out.println("No reward line found.");
                                 System.out.println("We have disconnected prematurely");
                                 DisconnectedPrematurely = false;
                                 //If we leave the match early we want to be sure to stop the current match check.
@@ -159,7 +171,6 @@ public class Main {
 
                         } else if (matchStarted) {
                             if (currentLine.contains("[StateGameLoading] Finished loading game level, assumed to be") && MakeRoundFiles) {
-                                System.out.println(currentPlayerID);
                                 playerQualifiedThisRound = false;
                                 checkForQualificationTextFound = false;
                                 roundFile = CreateNewRoundFile(MatchFolderDirectory);
@@ -408,11 +419,10 @@ public class Main {
         return false;
     }
 
-    public static long UpdatePlayerID(String currentLine) {
+    public static void UpdatePlayerID(String currentLine) {
 
         String[] splitParts = currentLine.split("player ID =");
         currentPlayerID = Integer.parseInt(splitParts[1].trim());
-        return currentPlayerID;
     }
 
     public static boolean CheckIfFileOrPathExists(Path path) {
@@ -502,8 +512,7 @@ public class Main {
         return DefaultDirectory;
     }
 
-    public static void CheckForValidOldSessionFolder(File DefaultDirectory, File SessionFolderDirectory) {
-        //first go over the file and see if they played a match at any point inside it, if there is match info in the file already we can assume it was read already.
+    public static void CheckForValidOldSessionFolder(File DefaultDirectory) {
         if (!MadeNewSession && SessionFolderDirectory == null) {
             String currLineFirstRead;
             try {
