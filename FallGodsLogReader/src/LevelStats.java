@@ -392,7 +392,7 @@ class LevelStats {
         ALLMAPS.put("round_match_fall", new LevelStats("round_match_fall", "Perfect Match", LevelType.Logic, false, false, 1, 80, 80));
         ALLMAPS.put("round_pixelperfect_almond", new LevelStats("round_pixelperfect_almond", "Pixel Painters", LevelType.Logic, false, false, 8, 180, 180));
         ALLMAPS.put("round_fruit_bowl", new LevelStats("round_fruit_bowl", "Sum Fruit", LevelType.Logic, false, false, 5, 100, 100));
-        ALLMAPS.put("round_basketfall_s4_show", new LevelStats("round_basketfall_s4_show", "Basketfall", LevelType.Team, false, false, 4, 90, 90));
+        ALLMAPS.put("round_basketfall", new LevelStats("round_basketfall", "Basketfall", LevelType.Team, false, false, 4, 90, 90));
         ALLMAPS.put("round_egg_grab", new LevelStats("round_egg_grab", "Egg Scramble", LevelType.Team, false, false, 1, 120, 120));
         ALLMAPS.put("round_egg_grab_02", new LevelStats("round_egg_grab_02", "Egg Siege", LevelType.Team, false, false, 2, 120, 120));
         ALLMAPS.put("round_fall_ball_60_players", new LevelStats("round_fall_ball_60_players", "Fall Ball", LevelType.Team, false, false, 1, 90, 90));

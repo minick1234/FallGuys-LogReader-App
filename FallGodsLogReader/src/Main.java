@@ -8,10 +8,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class Main {
-    private static int currentPlayerID = -1, numberOfSessions = 0, numberOfMatches = 0, numberOfRounds = 0, roundInfoCounter = 10, PlayerPositionInThisRound = 1;
-    private static String pathToPlayerLog, currentLine;
+    private static int currentPlayerID = -1, numberOfSessions = 0, roundInfoCounter = 10, PlayerPositionInThisRound = 1, LevelsLoaded = 0;
+    private static String pathToPlayerLog, currentLine, gameModeSelected;
     private static long lastKnownLength = 0;
-    private static boolean printRoundInfo = false, AddNewSession = true, JustLaunchedFirstSkip = false, PrintedEndOfMatchInfo = false, playerQualifiedThisRound = false, checkForQualificationTextFound = false, MadeNewSession = false;
+    private static boolean foundPlayerFinishedStatus = false, printRoundInfo = false, AddNewSession = true, JustLaunchedFirstSkip = false, PrintedEndOfMatchInfo = false, playerQualifiedThisRound = false, checkForQualificationTextFound = false, MadeNewSession = false, gameModeFound = false, checkForGameMode = false;
     private static File roundFile = null, SessionFolderDirectory = null, MatchFolderDirectory = null;
     private static RandomAccessFile raf = null;
 
@@ -61,7 +61,41 @@ public class Main {
                     raf.seek(lastKnownLength);
                     while ((currentLine = raf.readLine()) != null) {
 
-                        if (currentLine.contains("ClientGameManager::HandleServerPlayerProgress PlayerId=")) {
+                        if (currentLine.contains("[HandleSuccessfulLogin] Selected show is") && !checkForGameMode && matchStarted) {
+                            String pattern = "(\\w+)$";
+                            Pattern regex = Pattern.compile(pattern);
+                            Matcher matcher = regex.matcher(currentLine);
+
+                            String lastPart = "";
+
+                            if (matcher.find()) {
+                                lastPart = matcher.group(1);
+                                System.out.println(lastPart);
+                            } else {
+                                System.out.println("No match found");
+                            }
+
+                            switch (lastPart) {
+                                case "main_show":
+                                    gameModeSelected = "Solos";
+                                    gameModeFound = true;
+                                    checkForGameMode = true;
+                                    break;
+                                case "squads_2player_template":
+                                    gameModeSelected = "Duos";
+                                    gameModeFound = true;
+                                    checkForGameMode = true;
+                                    break;
+                                case "squads_4player":
+                                    gameModeSelected = "Squads";
+                                    gameModeFound = true;
+                                    checkForGameMode = true;
+                                    break;
+                            }
+                        }
+
+                        if (currentLine.contains("ClientGameManager::HandleServerPlayerProgress PlayerId=") && matchStarted) {
+
                             String CurrLinePlayerId = "";
                             Pattern pattern = Pattern.compile("PlayerId=(\\d+)");
                             Matcher matcher = pattern.matcher(currentLine);
@@ -71,11 +105,11 @@ public class Main {
                             }
 
                             if (Integer.parseInt(CurrLinePlayerId) == currentPlayerID) {
-
                                 checkForQualificationTextFound = true;
                                 playerQualifiedThisRound = Boolean.parseBoolean(currentLine.split("=")[2]);
 
-                                System.out.println("I am in here so im going to print this");
+                                foundPlayerFinishedStatus = true;
+                                System.out.println("The player qualified this round: " + playerQualifiedThisRound);
                                 WriteToFile(roundFile, "Qualified: " + playerQualifiedThisRound);
 
                                 if (!playerQualifiedThisRound) {
@@ -91,7 +125,12 @@ public class Main {
                         }
 
                         if (currentLine.contains("[Hazel] [HazelNetworkTransport] Disconnect request received for connection 0. Reason: HazelNetworkTransport - Disconnect")) {
+
+                            matchStarted = false;
                             System.out.println("We have left the lobby.");
+                            checkForGameMode = false;
+                            foundPlayerFinishedStatus = false;
+                            LevelsLoaded = 0;
 
                             //if we are here we can assume the player(s) didn't qualify for the next round and left early.
                             if ((!playerQualifiedThisRound && checkForQualificationTextFound && !PrintedEndOfMatchInfo) || !MakeRoundFiles) {
@@ -165,12 +204,25 @@ public class Main {
                         }
 
                         if (currentLine.contains("[StateConnectToGame] We're connected to the server!")) {
+                            LevelsLoaded = 0;
+                            System.out.println("The player id for this game is: " + currentPlayerID);
+                            foundPlayerFinishedStatus = false;
+                            checkForGameMode = false;
                             MakeRoundFiles = true;
                             MatchFolderDirectory = CreateNewMatchFolder(SessionFolderDirectory);
                             matchStarted = true;
 
                         } else if (matchStarted) {
                             if (currentLine.contains("[StateGameLoading] Finished loading game level, assumed to be") && MakeRoundFiles) {
+                                ++LevelsLoaded;
+
+                                if (LevelsLoaded > 1 && !foundPlayerFinishedStatus && gameModeFound && (gameModeSelected.equals("Duos") || gameModeSelected.equals("Squads"))) {
+                                    System.out.println("Correcting the squad or due - not qualified information in the logs.");
+                                    WriteToFile(roundFile, "Qualified: false");
+                                    WriteToFile(roundFile, "Position: -1");
+                                }
+
+                                foundPlayerFinishedStatus = false;
                                 playerQualifiedThisRound = false;
                                 checkForQualificationTextFound = false;
                                 roundFile = CreateNewRoundFile(MatchFolderDirectory);
@@ -190,6 +242,23 @@ public class Main {
 
                                 String tempMapNameFromLog = MapNameFromLog.substring(0, MapNameFromLog.length() - 1);
                                 String[] MapNameSplit = tempMapNameFromLog.trim().split("_");
+
+                                if (!gameModeFound && !checkForGameMode) {
+                                    if (MapNameSplit[MapNameSplit.length - 1].equals("40")) {
+                                        gameModeSelected = "Solos";
+                                    } else if (MapNameSplit[MapNameSplit.length - 1].equals("squads")) {
+                                        gameModeSelected = "Squads";
+                                    } else if (MapNameSplit[MapNameSplit.length - 1].equals("duos")) {
+                                        gameModeSelected = "Duos";
+                                    }
+
+                                    gameModeFound = true;
+                                    checkForGameMode = true;
+                                }
+
+                                if (gameModeSelected.contains("Duos") || gameModeSelected.contains("Solos") || gameModeSelected.contains("Squads")) {
+                                    WriteToFile(roundFile, "Gamemode: " + gameModeSelected);
+                                }
 
                                 String RealMapName = "";
 
@@ -231,8 +300,10 @@ public class Main {
                         }
 
                         if (currentLine.contains("[Round")) {
+                            gameModeFound = false;
                             playerQualifiedThisRound = false;
                             MakeRoundFiles = false;
+                            matchStarted = false;
 
                             PrintedEndOfMatchInfo = true;
                             String[] roundLineInTwo = currentLine.split("\\|");
@@ -256,7 +327,7 @@ public class Main {
                             }
                         }
 
-                        if (currentLine.contains("[ClientGlobalGameState] Client has been disconnected")) {
+                        if (currentLine.contains("[ClientGlobalGameState] Client has been disconnected") && matchStarted) {
                             matchStarted = false;
                         }
 
@@ -276,9 +347,6 @@ public class Main {
                 raf = null;
             }
 
-            //At this point, the session has stopped, so reset the number of rounds and matches to 0, for the new session when it starts.
-            numberOfMatches = 0;
-            numberOfRounds = 0;
             lastKnownLength = 0;
             AddNewSession = true;
 
@@ -437,13 +505,12 @@ public class Main {
     }
 
     public static File CreateNewRoundFile(File matchFolderDirectory) {
+        int numberOfRounds = 0;
         File[] roundFiles = matchFolderDirectory.listFiles(File::isFile);
         File newRoundTextFile = null;
         if (roundFiles != null && roundFiles.length > 0) {
             for (File roundFile : roundFiles) {
-                String roundFileWithExtension = roundFile.getName().trim().split("_")[1];
-                numberOfRounds = Integer.parseInt(roundFileWithExtension.trim().split("\\.")[0]);
-
+                numberOfRounds++;
             }
             newRoundTextFile = new File(matchFolderDirectory.getPath() + "\\Round_" + ++numberOfRounds + ".txt");
             try {
@@ -468,12 +535,14 @@ public class Main {
 
     public static File CreateNewMatchFolder(File writeSessionsFolder) {
 
+        int numberOfMatches = 0;
         File[] matchFolders = writeSessionsFolder.listFiles(File::isDirectory);
         File newMatchFolder = null;
         if (matchFolders != null && matchFolders.length > 0) {
             for (File folder : matchFolders) {
-                numberOfMatches = Integer.parseInt(folder.getName().split("_")[1]);
+                numberOfMatches++;
             }
+            System.out.println("Number of matches: " + numberOfMatches);
             newMatchFolder = new File(writeSessionsFolder.getPath() + "\\Match_" + ++numberOfMatches);
             newMatchFolder.mkdir();
 
